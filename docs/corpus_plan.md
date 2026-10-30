@@ -1,50 +1,63 @@
-# D1 语料收集计划
+# D1 语料清单与收集状态
 
-## 已就绪资料
+采集日期：2026-10-30。
 
-7 份自建 PPT 已复制并登记在 `data/raw/sources.jsonl`。这些资料属于二级权威来源，用于解释业务流程和基础概念。
+## 已完成资料
 
-## 官方平台政策页计划
+| 类别 | 数量 | 存储位置 | 状态 |
+|---|---:|---|---|
+| 自建 PPT | 7 | `data/raw/ppt/` | 已登记 |
+| Amazon 官方政策页 | 5 | `data/raw/html/` | 已保存正文 |
+| eBay 官方政策页 | 7 | `data/raw/html/` | 已保存正文 |
+| 海关等部门监管文件 | 5 | `data/raw/pdf/` | 已保存 PDF |
 
-目标收集 12 个官方页面，最终数量保持在 10 至 15 个。
+平台政策页合计 12 个，符合 10 至 15 个的目标。监管文件合计 5 份，符合 3 至 5 份的目标。所有实际文件均登记在 `data/raw/sources.jsonl`。
 
-| source_id | 平台 | 主题 | 状态 |
+## Amazon 政策页
+
+| source_id | 主题 | 状态 |
+|---|---|---|
+| `amazon_reviews_policy` | 商品评论与评论操纵政策 | 已保存 |
+| `amazon_restricted_products_policy` | 受限商品与违规申诉 | 已保存 |
+| `amazon_fair_conduct_policy` | 公平行事与功能滥用 | 已保存 |
+| `amazon_appeal_process` | 账户申诉流程 | 已保存 |
+| `amazon_inform_act` | 美国消费者告知法案信息验证 | 已保存 |
+
+## eBay 政策页
+
+| source_id | 主题 | 状态 |
+|---|---|---|
+| `ebay_intellectual_property_policy` | 知识产权政策 | 已保存 |
+| `ebay_offensive_materials_policy` | 冒犯性材料政策 | 已保存 |
+| `ebay_illegal_explicit_content_policy` | 非法露骨内容政策 | 已保存 |
+| `ebay_adult_items_policy` | 成人商品限制政策 | 已保存 |
+| `ebay_feedback_policy` | 评价政策 | 已保存 |
+| `ebay_item_description_policy` | 商品描述政策 | 已保存 |
+| `ebay_search_manipulation_policy` | 搜索操纵政策 | 已保存 |
+
+## 监管文件
+
+| source_id | 文件主题 | 发布机构 | 状态 |
 |---|---|---|---|
-| amazon_product_compliance | Amazon | 商品合规要求 | 待收集 |
-| amazon_restricted_products | Amazon | 禁售和限制销售商品 | 待收集 |
-| amazon_batteries | Amazon | 电池和危险品要求 | 待收集 |
-| amazon_ip_policy | Amazon | 知识产权政策 | 待收集 |
-| amazon_account_health | Amazon | 账户健康 | 待收集 |
-| amazon_appeal | Amazon | 停用与申诉流程 | 待收集 |
-| amazon_seller_code | Amazon | 卖家行为准则 | 待收集 |
-| ebay_restricted_items | eBay | 限制和禁售商品 | 待收集 |
-| ebay_vero | eBay | 知识产权和 VeRO | 待收集 |
-| ebay_seller_protection | eBay | 卖家保护 | 待收集 |
-| ebay_international_shipping | eBay | 国际物流和跨境销售 | 待收集 |
-| ebay_account_restrictions | eBay | 账户限制与申诉 | 待收集 |
+| `gov_export_return_tax_2026` | 跨境电商出口退运税收优惠 | 财政部、海关总署、税务总局 | 已保存 |
+| `gov_overseas_warehouse_tax_2025` | 出口海外仓退免税 | 国家税务总局 | 已保存 |
+| `gov_customs_export_2024` | 进一步促进跨境电商出口 | 海关总署 | 已保存 |
+| `gov_import_list_2022` | 调整跨境电商零售进口商品清单 | 财政部等多部门 | 已保存 |
+| `gov_retail_supervision_2018` | 跨境电商零售进出口监管 | 海关总署 | 已保存 |
 
-收集时必须保存页面正文、官方 URL、发布方和访问日期。不得用搜索摘要、第三方解读或截图代替官方正文。
+## 存储与版权
 
-## 监管文件计划
-
-目标收集 3 至 5 份海关总署、商务部等官方公开文件。
-
-| source_id | 文件主题 | 计划来源 | 状态 |
-|---|---|---|---|
-| customs_retail_supervision | 跨境电商零售进出口监管 | 海关总署 | 待收集 |
-| customs_export_return | 跨境电商出口退运 | 海关总署 | 待收集 |
-| mofcom_b2b_export | 跨境电商 B2B 出口政策 | 商务部 | 待收集 |
-| customs_tax_policy | 跨境电商税费政策 | 海关总署或财政部 | 待收集 |
-| customs_restricted_goods | 禁止或限制进出境商品 | 海关总署 | 待收集 |
+官方正文和 PDF 仅作为本地实验语料，不提交到公开 Git 仓库。`sources.jsonl` 保存来源 URL、发布日期、采集日期、语言、路径与哈希；`scripts/fetch_official_sources.py` 用于重新获取正文。
 
 ## 拒答语料边界
 
-“欧盟包装法 2026 年新要求”是固定拒答场景。D1 至 D3 收集语料时不得加入能够直接回答该问题的政策文件。若后续业务范围扩展并加入对应资料，必须同时修改评测集和项目范围说明。
+“欧盟包装法 2026 年新要求”是固定拒答场景。当前语料没有加入能够直接回答该问题的政策文件。若后续扩展业务范围，必须同时修改评测集和项目范围。
 
 ## D1 验收
 
-- `data/raw/ppt` 中存在 7 份核心 PPT，文件名与 `source_id` 一致。
-- 每份 PPT 的 SHA256、页数、更新时间和原始名称均已登记。
-- `docs/project_definition.md` 包含目标、范围、指标、语料策略和风险。
-- 官方平台政策页和监管文件已有明确主题、数量和登记规则。
-- 未把计划中的网页或 PDF 虚假登记为本地已有文件。
+- 7 份核心 PPT 已复制、重命名并登记。
+- 12 个官方平台政策页已保存正文和 URL。
+- 5 份官方监管文件已保存为 PDF。
+- `sources.jsonl` 共 24 条，`source_id` 唯一。
+- 所有路径、URL、语言、日期、哈希和 PDF 页数均通过脚本校验。
+- `python scripts/validate_sources.py` 返回 `VALIDATION PASSED`。
