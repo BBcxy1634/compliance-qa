@@ -1,0 +1,5 @@
+run_name: d4_bge_extractive
+backend: bge_m3
+mode: extractive
+judge: deepseek
+top_k: 5

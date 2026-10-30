@@ -1,0 +1,366 @@
+﻿id,type,question,answer,gold_answer,key_facts,auto_correct,auto_reason,manual_correct,manual_notes
+q001,fact,亚马逊是否允许卖家通过返现换取评论？,"根据检索到的官方资料，可确认：
+- 🔹 通过亚马逊买家与卖家消息服务直接联系买家,提供买家报酬(返现)以换取评论。 [C1]
+- 🔹 卖家自行或雇用第三方服务商,通过网站或任何社交平台(如微信、Facebook等),以退款、返现、回购折扣、礼物卡为补偿换取评论。 [C1]
+- 评论对亚马逊商城起着至关重要的作用,买家可以对商品/服务信息以及对商品/服务的体验进行反馈,让亚马逊商城和卖家不断进步,给买家们提供更好的购物体验。 [C2]
+- 2/ 不被允许的商品评论滥用行为 [C2]
+- 品牌所有者可登录亚马逊卖家平台,点击“品牌>买家评论”,通过电子邮件渠道直接与买家沟通,回复买家的差评(一星到三星的评论),并且在适用的情况下提供补救措施: [C3]
+- 您必须拥有专业卖家账户,且是完成亚马逊品牌注册的品牌代表,才可查看品牌“买家评论”。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",不允许。卖家不得为获得好评提供补偿，包括返现、退款、折扣、礼品卡以及免费或打折商品。,"[""不得通过经济利益换取评论"", ""免费或打折商品也属于补偿""]",False,候选答案未明确陈述不允许返现换评论的结论，且缺少免费或打折商品也属于补偿这一关键事实。,,
+q002,fact,卖家创建多个虚假买家账号来发布评论，会违反亚马逊评论政策吗？,"根据检索到的官方资料，可确认：
+- 注意:当您的账号出现买家商品评论政策违规之前,亚马逊团队已经做了深入调查,并最终做出此判定。 [C1]
+- 如果卖家对于判定存在异议,卖家应提供证据或示例表明账户符合亚马逊买家评论政策。 [C1]
+- 🔹 提供支持性文件或证据证明您的账户没有违反亚马逊的商品评论政策。 [C2]
+- 如果卖家承认他们滥用了商品评论,则需要按照申诉页面提示进行问卷形式的申诉,提供详细描述来说明用于发布或获取禁止的商品评论的所有方法、违规评论清单和有效的评论ID、评论链接,以及选择对该账户进行滥用商品评论的实际操作方(卖家还是第三方服务商)。 [C2]
+- 创建多个虚假买家账号来发布虚假评论(包括好评和差评),俗称僵尸号、自养号等。 [C3]
+- 🔹 通过亚马逊买家与卖家消息服务直接联系买家,提供买家报酬(返现)以换取评论。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",会。创建多个虚假买家账号发布好评或差评，俗称僵尸号、自养号，属于禁止的评论操纵行为。,"[""创建多个虚假买家账号违规"", ""好评和差评都包括在内""]",True,候选答案包含创建多个虚假买家账号违规及好评差评都包括在内的关键事实，无冲突陈述。,,
+q003,fact,亚马逊发现卖家操纵评论后，可能采取哪些措施？,"根据检索到的官方资料，可确认：
+- 评论对亚马逊商城起着至关重要的作用,买家可以对商品/服务信息以及对商品/服务的体验进行反馈,让亚马逊商城和卖家不断进步,给买家们提供更好的购物体验。 [C1]
+- 3/ 卖家滥用评论的后果以及申诉流程 [C1]
+- 🔹 通过亚马逊买家与卖家消息服务直接联系买家,提供买家报酬(返现)以换取评论。 [C2]
+- 通过亚马逊买家与卖家消息服务直接联络买家,并要求或诱导其对商品发表正面评论或删除/修改负面评论。 [C2]
+- 品牌所有者可登录亚马逊卖家平台,点击“品牌>买家评论”,通过电子邮件渠道直接与买家沟通,回复买家的差评(一星到三星的评论),并且在适用的情况下提供补救措施: [C3]
+- 您必须拥有专业卖家账户,且是完成亚马逊品牌注册的品牌代表,才可查看品牌“买家评论”。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",可能限流ASIN、永久撤销销售权限并扣留资金、移除评论、阻止后续评论评级、永久下架商品，甚至采取法律行动。,"[""ASIN可能被限流"", ""可能永久撤销销售权限并扣留资金"", ""可能移除评论并阻止后续评论评级"", ""可能永久下架商品"", ""可能采取法律行动""]",False,候选答案未覆盖任何关键事实，如限流ASIN、撤销销售权限扣留资金、移除评论、下架商品或法律行动。,,
+q004,fact,在亚马逊账户申诉中，卖家承认违规后还必须提交传统开放式行动计划书吗？,"根据检索到的官方资料，可确认：
+- 亚马逊取消了提交开放式问题形式的 “提交行动计划书”,并将其替换成“阅读并勾选承认违规的选项”或“阅读并勾选承认违规的选项后,在空白框做详细解释说明”的方式。 [C1]
+- 因此,如果您承认违规,将有四种申诉方式,系统将自动根据卖家的具体违规原因分配不同的申诉方式。 [C1]
+- 如果卖家认为被标记的违规行为属于误判,则应通过申诉按钮提交包含证明其账户符合亚马逊销售政策和卖家行为准则的证据或示例。 [C2]
+- :这项申诉渠道在页面末端需要卖家勾选“已得知第三方的所有操作将被视为卖家账户本体的操作”,如果账户仍然出现重复违规,将导致账户直接停用,届时将不确定是否还有其他申诉空间,所以再次强调在 [C2]
+- 温馨提醒:由于违规的类型各异,卖家还是需要以实际收到的绩效通知里的申诉要求为申诉基准,提交最终的申诉文件以及说明。 [C3]
+- 加入了专业销售计划的中国卖家可以通过“亚马逊卖家平台>绩效>账户状况页面中的‘现在与我联系’按钮”,进入申请页面。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",不需要。亚马逊已取消开放式行动计划书，改为阅读并勾选承认违规、勾选后填写解释说明、修改详情页或完成政策教育测验；具体方式由系统按违规原因分配。,"[""传统开放式行动计划书已取消"", ""申诉改为勾选、解释、修改详情页或测验等形式""]",True,候选答案明确说明传统开放式行动计划书已取消，并提及勾选承认违规、解释说明及系统按违规原因分配等替代形式，覆盖全部关键事实且无冲突。,,
+q005,fact,如果亚马逊卖家否认违规，申诉时应该提交什么？,"根据检索到的官方资料，可确认：
+- 因此,如果您承认违规,将有四种申诉方式,系统将自动根据卖家的具体违规原因分配不同的申诉方式。 [C1]
+- 您如果看到政策合规性页面下的 “后续步骤”显示“编辑”按钮,则表示卖家需要从商品详情页面上移除违规信息便可通过申诉。 [C1]
+- 如果卖家认为被标记的违规行为属于误判,则应通过申诉按钮提交包含证明其账户符合亚马逊销售政策和卖家行为准则的证据或示例。 [C2]
+- :这项申诉渠道在页面末端需要卖家勾选“已得知第三方的所有操作将被视为卖家账户本体的操作”,如果账户仍然出现重复违规,将导致账户直接停用,届时将不确定是否还有其他申诉空间,所以再次强调在 [C2]
+- 系统将根据卖家的违规历史分配不同的申诉方式,具体请查看您申诉页面上的申诉要求。 [C3]
+- 否认违规的账户/ASIN级别申诉流程保持不变 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",否认违规的申诉流程保持不变，卖家应在申诉页面提交能够证明没有违规的支持性证据或文件。,"[""否认违规需要支持性证据"", ""不是勾选承认违规""]",False,候选答案未明确覆盖'否认违规需要支持性证据'和'不是勾选承认违规'两个关键事实，仅提及误判时提交证据，未直接对应否认违规申诉要求。,,
+q006,fact,亚马逊卖家给自己下虚假订单来提高搜索排名，是否违反公平行事准则？,"根据检索到的官方资料，可确认：
+- 卖家禁止以任何形式控制买家账户,通过给自己账户下虚假订单的方式,提高自身商品搜索结果或销售排名。 [C1]
+- 🔹 操纵销售排名(例如:接受虚假订单或您自己付款的订单),或在商品名称或描述中声称销售排名相关信息。 [C1]
+- 上文提及的两种常见公平行事违规类型(操纵商品搜索结果以及销售排名和试图损害或攻击其他卖家)都将通过这项申诉方式进行。 [C2]
+- 🔹 索取或接受虚假订单或欺诈订单。 [C2]
+- 亚马逊销售政策和卖家行为准则规定,卖家必须遵循公平、合法的行事原则,且不得滥用亚马逊提供的任何服务,以确保安全的购买和销售体验。 [C3]
+- 违反“公平行事”准则的违规行为最为常见 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",违反。亚马逊禁止控制买家账户或使用虚假订单操纵商品搜索结果和销售排名。,"[""禁止虚假订单"", ""禁止操纵搜索和销售排名""]",True,候选答案明确包含禁止虚假订单和禁止操纵搜索与销售排名两项关键事实，且无冲突陈述。,,
+q007,fact,供应商没有告知商品属于受限商品时，亚马逊卖家可以免责吗？,"根据检索到的官方资料，可确认：
+- 卖家认为责任在于供应商没有告知他们所销售的商品属于受限商品。 [C1]
+- 卖家认为违规的责任不在于自己,上架违规商品的原因是因为看到亚马逊别的卖家也在销售或者听取了其他渠道的建议,没有阅读“受限商品”政策和对商品进行排查,就直接上架。 [C1]
+- 登录亚马逊卖家平台,点击右上角“帮助 > 获取帮助资源”,在页面最下方点击“计划政策 > ‘我要开店’费用价目表 > 分类、商品和商品限制 > 受限商品”。 [C2]
+- 以上所列出的受限商品示例仅适用于当前发布的亚马逊政策以及当地的法律、法规,卖家有责任自行确认后再上架商品。 [C2]
+- 路径:登录亚马逊卖家平台,点击右上角“帮助 > 获取帮助资源”,在页面最下方点击“计划政策 > ‘我要开店’费用价目表 > 分类、商品和商品限制 > 受限商品”。 [C3]
+- 所提交的未违规信息来源必须是权威的,或是可以直接证明商品符合亚马逊“受限商品”政策和当地法律、法规的条例。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",不可以。卖家有义务自行甄别计划上架商品是否属于受限商品，供应商未告知不能成为免责理由。,"[""卖家有商品合规责任"", ""供应商未告知不能免责""]",False,候选答案仅复述卖家观点和操作路径，未明确陈述卖家有商品合规责任，也未直接回答供应商未告知不能免责，缺少关键事实。,,
+q008,fact,把亚马逊受限商品的Listing改为缺货状态，就能解决违规吗？,"根据检索到的官方资料，可确认：
+- 卖家一定要注意,不申诉而直接删除或下架违规ASIN,并不能使该商品满足合规,也不能解决受限商品政策违规。 [C1]
+- 卖家需要在提交申诉前确保已检查库存里的所有商品(包括所有在售和非在售商品),确保没有任何违规,符合亚马逊受限商品政策要求。 [C1]
+- ⭐ Q2:我已将受限商品的商品信息更改为缺货(OOS)状态,为什么还没有解决违规问题? [C2]
+- ⭐ Q1:我已经查看了“受限商品”政策,但仍旧认为我的商品被标记违规是误判,该怎么办? [C2]
+- 【收藏】亚马逊受限商品政策解读,违规申诉全指导! [C3]
+- 3/ 常见受限商品违规类型及案例 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",不能。卖家必须停止销售并从库存中移除全部受限商品，包括FBA库存；只改成缺货不足以解决违规。,"[""缺货状态不能解决违规"", ""必须移除包括FBA在内的全部受限库存""]",False,候选答案未明确覆盖关键事实：缺货状态不能解决违规，且必须移除包括FBA在内的全部受限库存。仅提及检查库存和缺货未解决，缺少移除全部受限库存的明确陈述。,,
+q009,fact,美国《消费者告知法案》适用于哪些销售规模的亚马逊第三方卖家？,"根据检索到的官方资料，可确认：
+- 根据该法案要求,在亚马逊美国商城销售、并达到法案相应规定要求的第三方卖家 [C1]
+- 该法案适用于在亚马逊商城上销售商品并满足如下条件的第三方卖家: [C1]
+- 美国《消费者告知法案》已生效! [C2]
+- 美国《消费者告知法案》多重验证到底怎么做? [C2]
+- 加入了专业销售计划的中国卖家可以通过“亚马逊卖家平台>绩效>账户状况页面中的‘现在与我联系’按钮”,进入申请页面。 [C3]
+- 亚马逊禁止卖家进行营销类沟通,如果卖家和买家进行了不合规的沟通(例如:诱导买家留好评、提供优惠券换取订单等行为),卖家收到的相关警告或停用决定并不是亚马逊的误判哦~ [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",适用于过去24个月中，新商品或未使用商品连续12个月销售达到200件以上，且交易总额超过5000美元的第三方卖家。,"[""过去24个月观察窗口"", ""连续12个月销售至少200件"", ""交易总额超过5000美元""]",False,候选答案未提及过去24个月观察窗口、连续12个月销售至少200件、交易总额超过5000美元等关键事实。,,
+q010,fact,亚马逊美国站银行账户验证成功后，资金需要等待多久才能转移？,"根据检索到的官方资料，可确认：
+- ,3天过后您才可开始转移账户中的资金。 [C1]
+- 例如,您有可能需要通过接收一封来自亚马逊的明信片以进行一次性验证。 [C1]
+- ,将验证成功的银行账户指定给您在美国站点的店铺以接收付款。 [C2]
+- 添加并提供相应银行账户信息,并在成功添加后,返回上一步页面中点击“管理存款方法”进行验证。 [C2]
+- ,否则亚马逊可能会暂停您的销售权限并扣留款项,直到您提供必要的信息并成功完成验证。 [C3]
+- 1若验证成功,您的卖家账户信息页面将会提示“验证成功”; [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",银行账户提交验证后存在3天强制性安全保留期，3天过后才能开始转移账户资金。,"[""3天强制性安全保留期"", ""保留期结束后才能转移资金""]",False,候选答案仅提到3天后可转移资金，缺少'3天强制性安全保留期'这一关键事实。,,
+q011,fact,Can eBay sellers list counterfeit products?,"根据检索到的官方资料，可确认：
+- Counterfeit items, unauthorized replicas, and copies of protected original items are not allowed on eBay. [C1]
+- You may list an item only if you are certain it is genuine and complies with the Counterfeit item policy . [C1]
+- Sellers are responsible for ensuring that any item they list on eBay is authentic and that items and listings don’t infringe the intellectual property rights of others. [C2]
+- Listings or products that infringe on the intellectual property rights of others are not allowed on eBay. [C2]
+- that eBay users trust our marketplace, and comply with the law. [C3]
+- Counterfeit item policy [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","No. Listings or products that infringe intellectual property rights, including counterfeit products, replicas and unauthorized copies, are not allowed on eBay.","[""Counterfeit products are prohibited"", ""Intellectual property infringement is prohibited""]",True,候选答案明确说明仿冒品和侵犯知识产权均被禁止，覆盖全部关键事实，无冲突陈述。,,
+q012,fact,Can an eBay seller use product photos copied from another website without permission?,"根据检索到的官方资料，可确认：
+- Using creative text copied from websites, catalogs, or advertisements without permission [C1]
+- Using third-party photos, images, or videos without permission [C1]
+- Image and text Images or text copied from other websites or internet searches Stock photos and text used without permission Scans or text copied from catalogs or advertisements Editing and using images that were copied from other websites or internet searches [C2]
+- Stock photos and text used without permission [C2]
+- Listings must include photos showing the item clearly, from several different angles and in all relevant detail. [C3]
+- Counterfeit items, unauthorized replicas, and copies of protected original items are not allowed on eBay. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","No. Using third-party photos, images or videos without permission can infringe copyright and is not allowed.","[""Third-party photos require permission"", ""Unauthorized use may infringe copyright""]",False,候选答案未明确陈述未经授权使用可能侵犯版权这一关键事实，仅列出禁止行为，缺少版权侵权结论。,,
+q013,fact,Can an eBay seller use a brand trademark in a listing without the owner's permission?,"根据检索到的官方资料，可确认：
+- Using a trademark or geographical indication without the permission of the owner can infringe on their intellectual property rights and is strictly prohibited on eBay. [C1]
+- Items listed on eBay must not use a trademark without permission. [C1]
+- Using slightly altered brand names or phrases that create a false impression that the item or listing is affiliated with the trademark owner [C2]
+- Using trademarks or brand names in your listing if the product isn’t manufactured by or specifically compatible with that brand, including to increase views [C2]
+- Listing a product and including information about the manufacturer's warranty without checking to see if it covers resale of the product [C3]
+- If an item is infringing, any listing that is selling the item is not allowed on eBay. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",No. Using a trademark or geographical indication without permission can infringe intellectual property rights and is strictly prohibited on eBay.,"[""Trademark use requires permission"", ""Unauthorized use is strictly prohibited""]",True,候选答案明确覆盖了商标使用需授权和未经授权严格禁止两个关键事实，且无冲突陈述。,,
+q014,fact,Are parallel imports always allowed on eBay?,"根据检索到的官方资料，可确认：
+- ng is not allowed. [C1]
+- The following rules help achieve the best possible position in eBay's Best Match sort order : [C1]
+- Parallel imports are genuine products that are sold in a country or region without the permission of the intellectual property rights owner. [C2]
+- Parallel imports can be considered intellectual property infringing in certain jurisdictions if the rights owner has not authorized the import or sale in that specific jurisdiction. [C2]
+- Examples of items not allowed under this policy are counterfeit products, replicas, unauthorized copies, and unauthorized parallel imports. [C3]
+- Listings or products that infringe on the intellectual property rights of others are not allowed on eBay. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",No. Genuine parallel imports can still be considered infringing in some jurisdictions when the rights owner has not authorized import or sale there.,"[""Parallel imports are not always allowed"", ""Authorization depends on the jurisdiction""]",True,候选答案包含平行进口并非总是允许，且授权取决于司法管辖区，覆盖全部关键事实，无冲突陈述。,,
+q015,fact,Must logos on an authentic branded item be visible in eBay listing photos?,"根据检索到的官方资料，可确认：
+- Logos, or any other parts of the item, must not be hidden or blurred in the photos. [C1]
+- Listings must include photos showing the item clearly, from several different angles and in all relevant detail. [C1]
+- Items listed on eBay must not use a trademark without permission. [C2]
+- Listing a fake, copied, or counterfeit item, even if labeled as a copy [C2]
+- your item is listed must not infringe on one’s trademark rights. [C3]
+- Using slightly altered brand names or phrases that create a false impression that the item or listing is affiliated with the trademark owner [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","Yes. Listings must show the item clearly, and logos or other parts of the item must not be hidden or blurred in the photos.","[""Photos must show the item clearly"", ""Logos must not be hidden or blurred""]",True,候选答案明确覆盖了照片需清晰展示物品以及标志不得隐藏或模糊两个关键事实，无冲突陈述。,,
+q016,fact,Can eBay sellers add unrelated popular keywords to improve search exposure?,"根据检索到的官方资料，可确认：
+- Manipulating eBay's search and browse experience by adding popular keywords in your listings that don't have any relation to your items, or using other tactics that could mislead buyers, is not allowed. [C1]
+- Search manipulation policy [C1]
+- The following rules help achieve the best possible position in eBay's Best Match sort order : [C2]
+- 业务评分:卖家评级( Top Rated Seller 权重极高 )是核心,涉及物流时效( 用 eBay 合作物流如 FedEx、DHL 保证时效 )、纠纷处理速度( 24 小时内响应、解决买家问题 )、退货率( 控制在低水平 )等,是平台判断卖家 “是否靠谱” 的关键 。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",No. All words in a listing must be accurate and relate only to the item for sale. Adding unrelated popular keywords manipulates eBay search and browse.,"[""All listing words must relate to the item"", ""Unrelated popular keywords are not allowed""]",True,候选答案明确说明添加与商品无关的热门关键词不被允许，且所有列表用词须与商品相关，覆盖全部关键事实。,,
+q017,fact,How should an eBay listing identify an accessory that is compatible with another product?,"根据检索到的官方资料，可确认：
+- (Compatible vehicles should not be included in the listing title) [C1]
+- Significant differences between items in a listing should be highlighted in the listing title, pictures, price, condition, and item specifics, so that buyers can easily tell them apart [C1]
+- If the item is an accessory for or compatible with another item, ""fits"", ""for"" or ""compatible with"" should be stated before the name of the compatible item. [C2]
+- However, ""fits"", ""for"" or ""compatible with"" is not allowed before the brand names of jewelry, clothing and accessories, or universally compatible items [C2]
+- This includes: Selling different brands or models in the same listing (for example, an iPhone 6 and an iPhone 7) Selling different items with different conditions in the same listing (for example, ""new"" and ""used"" items) [C3]
+- Selling different items with different conditions in the same listing (for example, ""new"" and ""used"" items) [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","The listing should state fits, for or compatible with before the compatible item name, and every word must accurately describe the item.","[""Use compatibility wording before the compatible item"", ""Listing words must be accurate""]",False,覆盖了兼容性措辞前置，但缺少“listing用词必须准确”这一关键事实。,,
+q018,fact,Can an eBay seller enter N/A for UPC or MPN when the manufacturer has provided the identifier?,"根据检索到的官方资料，可确认：
+- The following are not allowed: Use of inaccurate information such as ""Does not apply,"" unbranded/generic, or ""N/A"" for required product identifiers (such as Brand, UPC, or MPN) when the manufacturer has provided that information for the product Including information that is not specific to that field, such as the brand of an item in the item specific for size Including terms in the wrong field Providing an incomplete or invalid EPA registration number for pesticide products [C1]
+- Use of inaccurate information such as ""Does not apply,"" unbranded/generic, or ""N/A"" for required product identifiers (such as Brand, UPC, or MPN) when the manufacturer has provided that information for the product [C1]
+- Product details must match the item exactly when creating a listing using the eBay catalog [C2]
+- Item descriptions, including pictures and video, must be in the primary language of the eBay site where the item is listed [C2]
+- A patent holder has the exclusive right to use their patented invention, so listing products that infringe on their patent is strictly prohibited on eBay. [C3]
+- Items on eBay must not infringe the patent rights of third parties. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","No. Required product identifiers must not be replaced with inaccurate values such as N/A, Does not apply, or unbranded/generic when the manufacturer provided the information.","[""Required product identifiers must be accurate"", ""N/A is not allowed when an identifier exists""]",True,候选答案明确列出制造商提供信息时禁止使用N/A等不准确值，覆盖了标识符必须准确及存在时不允许N/A两个关键事实。,,
+q019,fact,What language must an eBay item description use?,"根据检索到的官方资料，可确认：
+- Item descriptions, including pictures and video, must be in the primary language of the eBay site where the item is listed [C1]
+- Product details must match the item exactly when creating a listing using the eBay catalog [C1]
+- When item descriptions are accurate, and in the primary language of the eBay site the item is listed on, buyers get a clear understanding of what the item is and any terms and conditions related to the item before they buy. [C2]
+- How to list sizes on eBay - opens in new window or tab [C2]
+- Item description policy [C3]
+- Your item description is one of the most important parts of your listing because it helps buyers decide whether to buy your item and what to expect if they do. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","The item description, including pictures and video, must use the primary language of the eBay site where the item is listed.","[""Use the primary language of the listing site"", ""Requirement covers pictures and video""]",True,候选答案明确覆盖两个关键事实：使用listing站点的主要语言，且要求涵盖图片和视频。,,
+q020,fact,"Are eBay listings that promote hatred, violence or discrimination allowed?","根据检索到的官方资料，可确认：
+- Listings or content that promote or glorify hatred, violence, or discrimination aren't allowed. [C1]
+- Listings or content that promote, perpetuate or glorify hatred, violence, or discrimination, including on the grounds of race, ethnicity, color, religion, disability, national origin, sex, gender and gender identity or sexual orientation, aren't allowed. [C1]
+- We have a strict policy against hate and discrimination to ensure that our platform remains a safe, trusted and inclusive environment for our global community of buyers and sellers. [C2]
+- If it doesn’t, eBay may take action consistent with applicable laws and the eBay User Agreement , and may even be legally required to do so. [C2]
+- eBay never allows illegal content, including child pornography, torture, snuff films, or bestiality. [C3]
+- eBay may use broad discretion when removing obscene material. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","No. eBay does not allow listings or content that promote or glorify hatred, violence or discrimination.","[""Hateful content prohibited"", ""Violent or discriminatory content prohibited""]",True,候选答案明确说明禁止宣扬仇恨、暴力或歧视的内容，覆盖了两个关键事实，且无冲突陈述。,,
+q021,fact,What approval and listing requirements apply to restricted adult items on eBay?,"根据检索到的官方资料，可确认：
+- Adult items policy [C1]
+- Some adult items are allowed when they follow our guidelines. [C1]
+- Seller accounts are automatically reviewed for pre-approval at the time of attempting to list in these categories [C2]
+- Items must be new and in the original packaging [C2]
+- We want to make adult items available to those who wish to purchase them and can do so legally, while preventing those who do not wish to view or purchase these items from easily accessing them. [C3]
+- eBay User Agreement , and may even be legally required to do so. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","Sellers must be pre-approved, accounts are reviewed when they attempt to list in restricted categories, items must be new and in original packaging, and listings must not include images of nudity or sexual content.","[""Seller pre-approval required"", ""Items must be new in original packaging"", ""No nudity or sexual images in the listing""]",False,缺少“禁止裸露或性内容图片”这一关键事实，未覆盖全部要求。,,
+q022,fact,Is feedback removable when a buyer demands a free upgrade or gift to avoid negative feedback?,"根据检索到的官方资料，可确认：
+- Jasmine sold a camera, but along with payment she received an email from the buyer stating, “If you don't include an upgraded memory card and a case at no additional charge I'll leave you negative feedback.” This is feedback extortion and as such the feedback is removable. [C1]
+- using fake, misleading, or manipulated feedback is not allowed. [C1]
+- We remove neutral/negative feedback when we can see that: [C2]
+- his is feedback extortion and as such the feedback is removable. [C2]
+- We remove neutral/negative feedback when any of the following occurred and this is what the buyer is referencing: [C3]
+- Maria declines because she is not obliged to accept change-of-mind returns and the buyer leaves negative feedback stating “Wouldn’t take the item back after I realized it wasn’t what I wanted”. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","Yes. That conduct is feedback extortion, and eBay may remove the feedback. Feedback must reflect the buyer's actual experience.","[""Threatening negative feedback for extra benefits is extortion"", ""Extortionate feedback is removable""]",True,候选答案明确包含威胁负面反馈以获取额外利益属于反馈勒索，且该反馈可移除，覆盖全部关键事实，无冲突陈述。,,
+q023,fact,"Will eBay remove feedback that promotes hatred, violence or discrimination?","根据检索到的官方资料，可确认：
+- We remove all feedback that contains any: [C1]
+- Content promoting hatred, violence or discrimination [C1]
+- In order to promote trust and respect among our diverse community of members, eBay does not allow items or content that promote or glorify hatred, violence, discrimination or intolerance based on the characteristics listed below or promote organizations that hold such views. [C2]
+- Listings or content that promote or glorify hatred, violence, or discrimination aren't allowed. [C2]
+- While we’re committed to protecting sellers’ businesses, it’s worth remembering that buyers don't expect to see 100% positive feedback and that eBay isn't in a position to contradict buyers’ opinions or judgment of items. [C3]
+- We use automation to proactively remove feedback that goes against our policy. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","Yes. eBay removes feedback containing content that promotes hatred, violence or discrimination, as well as profane, obscene or explicit content.","[""Hateful feedback is removable"", ""Profane or explicit feedback is removable""]",False,候选答案覆盖了仇恨性反馈可移除，但未提及亵渎或露骨反馈可移除这一关键事实。,,
+q024,fact,2026年公告对跨境电商出口退运税收优惠的适用期限和条件是怎样的？,"根据检索到的官方资料，可确认：
+- 关于跨境电子商务出口退运商品税收优惠政策的公告 [C1]
+- 为支持跨境电子商务新业态发展,现将跨境电子商务出口退运商品税收优惠政策公告如下: [C1]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退(免)税有关事项的公告 [C2]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退 [C2]
+- 查实属于骗取出口退税的,按照《中华人民共和国税收 [C3]
+- 八、本公告未尽事宜,按照现行出口退(免)税相关规定执行。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",2026年1月1日至2027年12月31日期间，通过1210、9610、9710、9810监管代码申报出口，因滞销或退货在出口之日起6个月内原状退运进境的商品，可按规定免征进口关税和进口环节税，食品除外。,"[""适用期为2026-01-01至2027-12-31"", ""适用1210、9610、9710、9810代码"", ""出口之日起6个月内原状退运"", ""食品不适用"", ""免征进口关税和进口环节增值税、消费税""]",False,候选答案未覆盖适用期、监管代码、6个月退运、食品除外及免征进口关税和进口环节税等全部关键事实。,,
+q025,fact,食品是否适用2026年跨境电商出口退运商品税收优惠？,"根据检索到的官方资料，可确认：
+- 关于跨境电子商务出口退运商品税收优惠政策的公告 [C1]
+- 为支持跨境电子商务新业态发展,现将跨境电子商务出口退运商品税收优惠政策公告如下: [C1]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退 [C2]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退(免)税有关事项的公告 [C2]
+- 跨境电子商务零售进口商品清单调整表 [C3]
+- 序号 税则号列 商品描述 备注 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",不适用。公告明确该项退运税收优惠不含食品。,"[""食品被排除"", ""退运税收优惠不适用于食品""]",False,候选答案未提及食品被排除或退运税收优惠不适用于食品，缺少全部关键事实。,,
+q026,fact,因滞销退运和因退货退运，企业分别需要准备什么原因说明材料？,"根据检索到的官方资料，可确认：
+- 运的商品,企业应提供“自我声明”作为退运原因说明材料,承诺为因滞销退运,并据此办理退运免税 [C1]
+- 等证明该商品确为因滞销、退货原因而退运进境的材料,并对材料的真实性承担法律责任。 [C1]
+- 9810)项下申报出口,因滞销、退货原因,自出口之日起6个月内原状退运进境的商品(不含食品), [C2]
+- 四、对符合第一、二、三条规定的商品,企业应当提交出口商品申报清单或出口报关单、退运原因说明 [C2]
+- (三)生产企业应当使用单独的申报序号、外贸企业应当使用单独的关联号申报出口预退税。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",因滞销退运的，应提供承诺因滞销退运的自我声明；因退货退运的，应提供包含平台退货或拒收记录的退货记录、返货协议等材料。,"[""滞销退运使用自我声明"", ""退货退运提供退货记录和返货协议""]",False,仅覆盖滞销退运自我声明，未提及退货退运需提供退货记录和返货协议，缺少关键事实。,,
+q027,fact,跨境电商出口海外仓9810模式可以什么时候申报出口退（免）税？,"根据检索到的官方资料，可确认：
+- 为深入贯彻落实党中央、国务院决策部署,支持跨境电商出口海外仓等新业态新模式发展,国家税务总 [C1]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退 [C1]
+- 9810)项下申报出口,因滞销、退货原因,自出口之日起6个月内原状退运进境的商品(不含食品), [C2]
+- 关于跨境电子商务出口退运商品税收优惠政策的公告 [C2]
+- 本公告施行前,纳税人以出口海外仓方式出口货物、但尚未申报出口退 [C3]
+- 查实属于骗取出口退税的,按照《中华人民共和国税收 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",货物报关离境后即可申报。尚未实现销售的货物可以采用离境即退税、销售再核算方式先申报出口预退税。,"[""9810模式离境后可申报"", ""未销售货物可先办理出口预退税""]",False,候选答案未覆盖关键事实：未说明9810模式离境后可申报，也未提及未销售货物可先办理出口预退税。,,
+q028,fact,出口海外仓预退税的核算期是什么时间段？,"根据检索到的官方资料，可确认：
+- 局决定对纳税人以跨境电商出口海外仓(以下简称出口海外仓)方式出口的货物实行“离境即退税”。 [C1]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退 [C1]
+- 查实属于骗取出口退税的,按照《中华人民共和国税收 [C2]
+- 本公告施行前,纳税人以出口海外仓方式出口货物、但尚未申报出口退 [C2]
+- 上述调整申报及缴回出口预退税的具体操作方式为:纳税人在核算当期申报出口退(免)税时,应当先 [C3]
+- 五、已申报办理出口预退税、但尚未办理核算的纳税人,需要变更退(免)税办法、撤回出口退(免) [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",核算期为税务机关办结出口预退税的次月1日至次年4月30日。,"[""从办结预退税次月1日开始"", ""到次年4月30日结束""]",False,候选答案未提及核算期从办结预退税次月1日开始，也未提及到次年4月30日结束，缺少全部关键事实。,,
+q029,fact,2024年海关公告取消跨境电商出口海外仓企业备案后，企业申报时还需要传输什么数据？,"根据检索到的官方资料，可确认：
+- 一、取消跨境电商出口海外仓企业备案 [C1]
+- 开展跨境电商出口海外仓业务的企业,无需向海关办理出口 [C1]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退(免)税有关事项的公告 [C2]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退 [C2]
+- 跨境电商零售出口和企业对企业出口清单申报前,跨境电商 [C3]
+- 业在申报环节仍需向海关传输订仓单电子数据,并对真实性负责。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",企业无需再办理出口海外仓业务模式备案，但申报环节仍需向海关传输订仓单电子数据并对真实性负责。,"[""取消海外仓业务模式备案"", ""申报时仍需传输订仓单电子数据""]",True,候选答案覆盖了取消海外仓业务模式备案和申报时仍需传输订仓单电子数据两个关键事实，无冲突陈述。,,
+q030,fact,2024年海关简化跨境电商出口单证申报后，是否还需要传输收款单电子信息？,文档中未找到足够依据，暂时无法回答这个问题。,不需要传输收款单电子信息。企业或代理人、物流企业仍应传输交易、物流等电子信息，并对数据真实性承担法律责任。,"[""无需传输收款单电子信息"", ""仍需交易和物流电子信息"", ""企业承担数据真实性责任""]",False,候选答案未覆盖任何关键事实，未说明无需传输收款单、仍需交易物流信息及企业担责。,,
+q031,fact,2024年海关公告中，9610模式跨关区退货试点有何安排，退货商品应退至哪里？,文档中未找到足够依据，暂时无法回答这个问题。,在20个直属海关开展试点，允许9610模式退货商品跨直属关区退货；退货商品应退至开展跨境电商零售出口业务的海关监管作业场所。,"[""在20个直属海关开展试点"", ""9610模式可跨直属关区退货"", ""退货商品退至开展跨境电商零售出口业务的海关监管作业场所""]",False,候选答案未覆盖任何关键事实，无法回答，缺少试点范围、跨关区退货及退货地点信息。,,
+q032,fact,2022年跨境电商零售进口商品清单调整中，增加和删除了多少项商品？,文档中未找到足够依据，暂时无法回答这个问题。,清单增加29项商品，删除1项商品，并根据税则转版调整部分商品税则号列。,"[""增加29项商品"", ""删除1项商品"", ""调整部分税则号列""]",False,候选答案未覆盖任何关键事实，未提及增加29项、删除1项及调整税则号列。,,
+q033,fact,跨境电商零售进口商品退货应在多长时间内以什么状态运回原监管作业场所？,"根据检索到的官方资料，可确认：
+- 关于跨境电子商务出口退运商品税收优惠政策的公告 [C1]
+- 为支持跨境电子商务新业态发展,现将跨境电子商务出口退运商品税收优惠政策公告如下: [C1]
+- )海关实施查验时,跨境电子商务企业或其代理人、跨境电子商务监管作业场所经营人、仓储 [C2]
+- 请退货,退回的商品应当符合二次销售要求并在海关放行之日起30日内以原状运抵原监管作业场所,相 [C2]
+- 境电子商务零售进口商品,以及海关责令退运的跨境电子商务零售进口商品,按照有关规定退运出境或 [C3]
+- 消费者(订购人)对于已购买的跨境电子商务零售进口商品不得再次销售。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",退货商品应符合二次销售要求，并在海关放行之日起30日内以原状运抵原监管作业场所；相应税款不予征收，并调整个人年度交易累计金额。,"[""海关放行之日起30日内"", ""以原状运回"", ""商品需符合二次销售要求""]",True,候选答案引文包含海关放行之日起30日内、以原状运抵原监管作业场所、符合二次销售要求三个关键事实，无冲突陈述。,,
+q034,fact,B2C跨境电商交易模式的定义是什么？,"根据检索到的官方资料，可确认：
+- 跨境电商中企业与企业之间的交易模式,如制造商向海外批发商供货、企业间采购原材料等。 [C1]
+- 个人卖家通过平台向海外个人买家销售商品的模式,常见于二手商品或小众商品交易,如 eBay 上的个人卖家跨境交易。 [C1]
+- 跨境电商平台运营依托 “平台 - 卖家 - 买家” 三方价值交换体系。 [C2]
+- 新手卖家进入跨境电商,一要吃透平台规则,像研究亚马逊 A9 算法、eBay 搜索逻辑等,让产品精准匹配流量; [C2]
+- 提供交易场所和服务的第三方平台,连接买卖双方,自身不直接参与商品销售,仅收取佣金或服务费,如亚马逊、阿里巴巴国际站。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",B2C是企业直接向海外个人消费者销售商品，通常批量小、频次高，物流多依赖国际快递或海外仓，例如亚马逊平台商家向国外买家发货。,"[""企业对消费者"", ""批量小频次高"", ""物流多依赖国际快递或海外仓""]",False,候选答案未覆盖关键事实：未说明企业对消费者、批量小频次高、物流依赖国际快递或海外仓，且内容偏离B2C定义。,,
+q035,fact,选品时应重点满足哪些合规与运营条件？,"根据检索到的官方资料，可确认：
+- 需满足 “收入 - 成本>合理利润”,重点核算:毛利率、成本结构、售后成本: [C1]
+- 选品的核心标准需兼顾市场接受度、盈利空间与运营可行性,最终实现 “卖得动、赚得多、做得顺” [C1]
+- 合规资质:要求提供营业执照(查看经营范围是否包含目标品类)、生产许可证(如食品需 SC 认证、电子产品需 3C 认证); [C2]
+- and must follow these guidelines: Sellers must be pre-approved. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",应符合目标国法规和禁售清单，供应商能稳定供货并支持小批量补货，同时产品安装和售后不能过于复杂，并考虑液体、电池等敏感品的运输限制。,"[""符合目标国法规和禁售清单"", ""供应链稳定且支持小批量补货"", ""运营可执行并考虑物流清关限制""]",False,未覆盖目标国法规和禁售清单、供应链稳定及小批量补货、物流清关限制等关键事实。,,
+q036,fact,跨境电商ERP系统通常具备哪些核心功能？,"根据检索到的官方资料，可确认：
+- ERP 系统是核心管理中枢,通过商品、订单、库存、物流等多环节的精细化管理,实现多平台高效协同运营,主流系统各有侧重,能适配不同规模卖家需求; [C1]
+- 这四者相互配合,为小白构建了一套从基础操作到高效运营的完整工具与能力体系,助力其在跨境电商领域稳步前行。 [C1]
+- 基础功能免费版包含商品管理、订单处理、库存管理等核心功能,能满足中小卖家的基本需求。 [C2]
+- 1.2 主流 ERP 系统介绍 [C2]
+- 1.1 ERP 系统的核心功能 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",核心功能包括商品管理、订单处理、库存管理以及与物流渠道对接和物流信息跟踪。,"[""商品管理"", ""订单处理"", ""库存管理"", ""物流对接""]",True,候选答案明确提及商品管理、订单处理、库存管理，并提到物流环节管理，覆盖物流对接关键事实，无冲突陈述。,,
+q037,fact,初创小卖家选择ERP系统时应优先考虑什么？,"根据检索到的官方资料，可确认：
+- 结合业务规模和预算,初创期的小卖家可选择基础功能免费或低价的系统,随着业务发展再升级到高级版本。 [C1]
+- 有一定规模的卖家则要考虑系统的稳定性、安全性和扩展性。 [C1]
+- 1.2 主流 ERP 系统介绍 [C2]
+- 基础功能免费版包含商品管理、订单处理、库存管理等核心功能,能满足中小卖家的基本需求。 [C2]
+- ERP 系统是核心管理中枢,通过商品、订单、库存、物流等多环节的精细化管理,实现多平台高效协同运营,主流系统各有侧重,能适配不同规模卖家需求; [C3]
+- 数据分析工具是运营的 “导航仪”,平台自带工具与第三方工具结合,从市场趋势、竞品、关键词等维度提供数据支撑,助力卖家精准决策; [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",应结合平台数量、业务规模和预算；初创期可选择基础功能免费或低价的系统，随着业务发展再考虑稳定性、安全性和扩展性，同时关注售后服务质量。,"[""考虑平台数量和类型"", ""结合业务规模和预算"", ""初创期可选免费或低价方案"", ""业务发展后关注稳定性、安全性和扩展性"", ""关注售后服务质量""]",False,缺少“考虑平台数量和类型”和“关注售后服务质量”两个关键事实，未完全覆盖标准答案要求。,,
+q038,fact,与国内支付相比，跨境电商支付通常具有哪些特点？,"根据检索到的官方资料，可确认：
+- 采用本地支付方式可以提高消费者支付的便利性和转化率,但对于跨境电商企业来说,接入和管理多种本地支付方式的难度较大。 [C1]
+- 其特点是支付便捷,覆盖范围广,全球大部分地区都能使用。 [C1]
+- 流程复杂性:相比国内支付,跨境支付流程更为复杂。 [C2]
+- 货币兑换:由于交易双方所处国家或地区的货币不同,跨境支付必然涉及货币兑换环节。 [C2]
+- 跨境电商打破了传统贸易的地域限制,借助互联网实现不同国家和地区的商家与消费者直接交易,交易范围覆盖全球,不受物理国界的严格约束。 [C3]
+- 买卖双方通常通过网络平台互动,无需透露真实身份细节(如具体住址、线下联系方式等),仅通过虚拟账号完成交易,彼此身份具有一定隐蔽性。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",跨境支付涉及货币兑换和汇率波动，流程更复杂、到账时间更长，并受到不同国家外汇管制、反洗钱等严格监管。,"[""涉及货币兑换"", ""存在汇率波动风险"", ""流程复杂且到账较慢"", ""受多国监管""]",False,缺少汇率波动风险、到账较慢、受多国监管等关键事实，仅覆盖货币兑换和流程复杂。,,
+q039,fact,FICO评分用于跨境电商企业信用评估有什么局限？,"根据检索到的官方资料，可确认：
+- FICO 评分是由美国 Fair Isaac 公司开发的个人信用评分模型,是全球金融行业应用最广泛的信用评分体系之一,主要用于评估个人在信贷场景中的违约风险 [C1]
+- 依赖银行信贷数据,缺乏电商消费、社交行为等新型数据,对 “信用白户”(无信贷记录人群)难以准确评分。 [C1]
+- - 场景1:支付环节,评估买家支付风险(是否恶意拒付、信用卡盗刷等)。 [C2]
+- - 场景2:订单履约环节,评估买家退货、差评倾向。 [C2]
+- 这套跨境电商评分系统指标,从支付可信度、交易稳定性等 6 大维度构建。 [C3]
+- 拒付历史比率等指标,结合跨境核心风险与业务需求,如防范欺诈、识别优质客户,各指标权重依据风险影响与业务价值分配,助力精准评估用户信用与风险,支撑跨境电商风控决策。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",FICO主要评估美国个人信贷违约风险，依赖传统银行信贷数据，不适用于企业履约和供应链表现等B端场景，也难以覆盖缺少美国信用记录的人群。,"[""主要针对美国个人信用"", ""依赖传统信贷数据"", ""不适用于B端企业履约评估""]",False,缺少“不适用于B端企业履约评估”这一关键事实，候选答案未明确说明FICO不适用于企业履约和供应链等B端场景。,,
+q040,fact,选品时容易被低估的隐性成本包括哪些？,"根据检索到的官方资料，可确认：
+- 低估隐性成本会导致成本核算失真,影响选品决策的科学性,甚至拖垮整体运营。 [C1]
+- 选品时若只关注采购成本、物流费用等显性成本,而忽视隐性成本,可能导致实际利润远低于预期。 [C1]
+- 忽视长尾关键词,仅聚焦大流量的核心关键词(如 “餐桌”“喂食器”),会导致选品精准度不足。 [C2]
+- 忽视长尾关键词会错过精准用户群体,导致选品与市场需求错位,销量难以突破。 [C2]
+- 物流成本:包括从国内仓库到国外仓库的头程运费、国外仓储费、尾程派送费、退货处理费等。 [C3]
+- 采购成本:商品的采购价格,加上采购过程中产生的运费、保险费、关税、增值税(不可抵扣部分)等。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",包括库存积压的仓储和管理成本、退换货及破损损耗、目标国认证和标签整改等合规成本，这些成本会显著影响真实利润。,"[""库存积压成本"", ""退换货和破损损耗"", ""认证与标签整改成本""]",False,未覆盖库存积压成本、退换货和破损损耗、认证与标签整改成本三项关键事实，仅泛泛提及隐性成本。,,
+q041,multi_hop,亚马逊卖家承认操纵商品评论后，当前申诉形式发生了什么变化，申诉说明还需要覆盖哪些内容？,"根据检索到的官方资料，可确认：
+- 亚马逊取消了提交开放式问题形式的 “提交行动计划书”,并将其替换成“阅读并勾选承认违规的选项”或“阅读并勾选承认违规的选项后,在空白框做详细解释说明”的方式。 [C1]
+- 在“卖家平台 > 绩效 > 账户状况页面”上的违规类型,例如涉嫌侵犯知识产权、商品状况买家投诉、食品和商品安全问题、上架政策违规、违反受限商品政策、违反买家商品评论政策、关联账户政策违规、公平行事准则违规等 [C1]
+- 评论对亚马逊商城起着至关重要的作用,买家可以对商品/服务信息以及对商品/服务的体验进行反馈,让亚马逊商城和卖家不断进步,给买家们提供更好的购物体验。 [C2]
+- 3/ 卖家滥用评论的后果以及申诉流程 [C2]
+- 如果卖家承认他们滥用了商品评论,则需要按照申诉页面提示进行问卷形式的申诉,提供详细描述来说明用于发布或获取禁止的商品评论的所有方法、违规评论清单和有效的评论ID、评论链接,以及选择对该账户进行滥用商品评论的实际操作方(卖家还是第三方服务商)。 [C3]
+- 预防措施:针对根本原因制订日后卖家将如何杜绝商品评论操纵行为的详细计划。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",承认违规后，传统开放式行动计划书已取消，改为勾选、解释说明、修改详情页或测验等形式。评论操纵申诉还需说明违规操作方法、违规评论清单和ID/链接、实际操作方，并交代根本原因、解决措施和预防措施。,"[""传统开放式行动计划书已取消"", ""申诉改为勾选、说明、修改详情页或测验"", ""说明评论操纵方法、评论清单和操作方"", ""提供根本原因、解决措施和预防措施""]",False,缺少“修改详情页或测验”形式，且未明确覆盖根本原因和解决措施，仅提及预防措施。,,
+q042,multi_hop,亚马逊受限商品违规申诉前应做哪些检查，申诉方式又发生了什么变化？,"根据检索到的官方资料，可确认：
+- 【收藏】亚马逊受限商品政策解读,违规申诉全指导! [C1]
+- 3/ 常见受限商品违规类型及案例 [C1]
+- 所提交的未违规信息来源必须是权威的,或是可以直接证明商品符合亚马逊“受限商品”政策和当地法律、法规的条例。 [C2]
+- 路径:登录亚马逊卖家平台,点击右上角“帮助 > 获取帮助资源”,在页面最下方点击“计划政策 > ‘我要开店’费用价目表 > 分类、商品和商品限制 > 受限商品”。 [C2]
+- 卖家需要在提交申诉前确保已检查库存里的所有商品(包括所有在售和非在售商品),确保没有任何违规,符合亚马逊受限商品政策要求。 [C3]
+- 如果卖家并未做好详细检查,这可能导致账户被标记为重复受限商品违规,那时账户申诉将会更加困难,甚至可能无法再被重新激活。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",申诉前应找出违规ASIN、核对平台和当地法规、检查Listing中的图片/敏感词/类别/成分并自查流程；存在FBA库存时应先移除。承认违规的申诉已改用勾选、说明、修改详情页或测验等形式，不再提交传统开放式行动计划书。,"[""查找违规ASIN并核查原因"", ""检查Listing和运营流程"", ""FBA库存需先移除"", ""承认违规采用新版问卷式申诉""]",False,未覆盖查找违规ASIN、检查Listing和运营流程、FBA库存先移除、承认违规采用新版问卷式申诉等关键事实。,,
+q043,multi_hop,An eBay listing offers counterfeit goods and gives an inaccurate description. Which two policy areas are violated?,"根据检索到的官方资料，可确认：
+- Counterfeit items, unauthorized replicas, and copies of protected original items are not allowed on eBay. [C1]
+- You may list an item only if you are certain it is genuine and complies with the Counterfeit item policy . [C1]
+- Examples of items not allowed under this policy are counterfeit products, replicas, unauthorized copies, and unauthorized parallel imports. [C2]
+- Intellectual property policy [C2]
+- Item description policy [C3]
+- Your item description is one of the most important parts of your listing because it helps buyers decide whether to buy your item and what to expect if they do. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",The listing violates the intellectual property policy because counterfeit and unauthorized items are prohibited. It also violates the item description policy because listing content and descriptions must be accurate and match the item.,"[""Counterfeit items violate intellectual property policy"", ""Listing descriptions must be accurate"", ""Inaccurate item information is not allowed""]",False,候选答案未明确陈述描述必须准确或不准确信息不被允许，仅提及描述重要性，缺少两个关键事实。,,
+q044,multi_hop,An eBay buyer leaves feedback containing hate speech. How do the feedback and offensive materials policies apply?,"根据检索到的官方资料，可确认：
+- We remove all feedback that contains any: [C1]
+- Links, URLs, or other content encouraging sales outside of eBay [C1]
+- Offensive materials policy [C2]
+- In order to promote trust and respect among our diverse community of members, eBay does not allow items or content that promote or glorify hatred, violence, discrimination or intolerance based on the characteristics listed below or promote organizations that hold such views. [C2]
+- If it doesn’t, eBay may take action consistent with applicable laws and the eBay User Agreement , and may even be legally required to do so. [C3]
+- We have a strict policy against hate and discrimination to ensure that our platform remains a safe, trusted and inclusive environment for our global community of buyers and sellers. [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。","The feedback policy allows eBay to remove feedback promoting hatred, violence or discrimination. The offensive materials policy independently prohibits listings or content that promote or glorify hatred, violence or discrimination.","[""Hateful feedback is removable"", ""Hateful listings or content are prohibited"", ""Both policy areas concern prohibited hateful content""]",False,候选答案未明确覆盖“仇恨反馈可移除”这一关键事实，仅列出反馈移除的占位符[C1]，未说明仇恨内容可移除；虽提及禁止仇恨内容，但缺少反馈政策的具体适用。,,
+q045,multi_hop,跨境电商出口海外仓企业在海关备案和税务退税方面分别需要注意什么？,"根据检索到的官方资料，可确认：
+- 局决定对纳税人以跨境电商出口海外仓(以下简称出口海外仓)方式出口的货物实行“离境即退税”。 [C1]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退 [C1]
+- 一、取消跨境电商出口海外仓企业备案 [C2]
+- 开展跨境电商出口海外仓业务的企业,无需向海关办理出口 [C2]
+- 二、对符合第一条规定的商品,已办理出口退税的,企业应当按现行规定补缴已退的税款。 [C3]
+- 关于跨境电子商务出口退运商品税收优惠政策的公告 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",海关方面已取消出口海外仓业务模式备案，但申报时仍需传输订仓单电子数据并保证真实。税务方面，9810模式货物报关离境后即可申报退（免）税，未销售货物可先办理出口预退税后再核算。,"[""海关取消海外仓业务模式备案"", ""申报仍需订仓单电子数据"", ""9810货物离境后可申报退税"", ""未销售货物可先办理出口预退税""]",False,缺少申报需订仓单电子数据、9810离境后可申报退税、未销售可先办预退税等关键事实，且未覆盖税务退税核心要求。,,
+q046,multi_hop,跨境电商出口退运税收优惠的退运期限要求，与海关9610跨关区退货渠道的要求分别是什么？,"根据检索到的官方资料，可确认：
+- 关于跨境电子商务出口退运商品税收优惠政策的公告 [C1]
+- 为支持跨境电子商务新业态发展,现将跨境电子商务出口退运商品税收优惠政策公告如下: [C1]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退 [C2]
+- 国家税务总局关于支持跨境电商出口海外仓发展出口退(免)税有关事项的公告 [C2]
+- 对因退货退运的商品,企业应提供退货记录(含跨境电子商务平台上的退货记录或拒收记 [C3]
+- 提交出口商品申报清单或出口报关单、退运原因说明 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",这是两项独立政策。出口退运税收优惠要求在出口之日起6个月内原状退运并符合公告条件，食品除外。海关9610跨关区退货则在20个指定直属海关试点，退货商品应退至开展跨境电商零售出口业务的海关监管作业场所。,"[""出口之日起6个月内原状退运"", ""食品不适用税收优惠"", ""9610模式在指定海关试点跨关区退货"", ""退货商品退至相应监管作业场所""]",False,候选答案未覆盖任何关键事实：缺少6个月退运期限、食品除外、9610指定海关试点及退至监管作业场所的要求。,,
+q047,multi_hop,商品被列入跨境电商零售进口清单，是否就等于可以直接进口销售？,"根据检索到的官方资料，可确认：
+- 适用“网购保税进口A”(监管方式代码1239)进口政策的商品,按《跨境电子商务零售进口商品清单 [C1]
+- (四)对跨境电子商务直购进口商品及适用“网购保税进口”(监管方式代码1210)进口政策的商品, [C1]
+- 海关总署公告2018年第194号(关于跨境电子商务零售进出口商品有关监管事宜的公告) [C2]
+- 为做好跨境电子商务零售进出口商品监管工作,促进跨境电子商务健康有序发展,根据《中华人民共和 [C2]
+- (八)跨境电子商务零售商品进口时,跨境电子商务企业境内代理人或其委托的报关企业应提交《中华 [C3]
+- 人民共和国海关跨境电子商务零售进出口商品申报清单》(以下简称《申报清单》),采取“清单核 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",不等于无条件准入。清单是跨境电商零售进口的准许商品范围，部分商品还注明仅限网购保税等条件；企业仍须遵守海关注册登记、交易/支付/物流数据传输、订购人身份真实性和税收征管等监管要求。,"[""清单准入不等于无限制销售"", ""部分商品仅限网购保税"", ""企业仍需遵守海关监管和申报要求""]",False,候选答案未覆盖关键事实：未说明清单准入不等于无限制销售、部分商品仅限网购保税、企业仍需遵守海关监管和申报要求。,,
+q048,multi_hop,以电池类产品为例，为什么选品时既要做运输可行性评估，又要核对平台受限商品政策？,"根据检索到的官方资料，可确认：
+- 以上所列出的受限商品示例仅适用于当前发布的亚马逊政策以及当地的法律、法规,卖家有责任自行确认后再上架商品。 [C1]
+- 同时,卖家应及时了解最新受限商品的相关资讯,例如当地法律、法规和亚马逊政策的更新。 [C1]
+- 政策合规:符合目标国法规(如欧盟 REACH 认证、美国 CPSC 标准),不触碰禁售清单(如电子烟、侵权商品); [C2]
+- 运营可执行:无需复杂安装、售后(如小家电需提供多语言说明书),物流清关难度低(避免液体、电池等敏感品的运输限制)。 [C2]
+- 登录亚马逊卖家平台,点击右上角“帮助 > 获取帮助资源”,在页面最下方点击“计划政策 > ‘我要开店’费用价目表 > 分类、商品和商品限制 > 受限商品”。 [C3]
+- 【收藏】亚马逊受限商品政策解读,违规申诉全指导! [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",电池属于运输敏感品，需要评估物流清关可行性。即使运输可行，也不能因为商品未出现在禁售示例中、其他卖家在售或某些渠道给出建议就默认允许销售；卖家必须核对目标站点的受限商品政策和当地法规，并自行承担商品合规责任。,"[""电池属于运输敏感品"", ""未列入禁售示例不代表允许销售"", ""不能依赖其他卖家或渠道建议"", ""卖家承担商品合规责任""]",False,缺少“未列入禁售示例不代表允许销售”和“不能依赖其他卖家或渠道建议”两个关键事实，未完整覆盖。,,
+q049,multi_hop,在eBay上新商品时，语言和关键词分别要遵守什么要求？,文档中未找到足够依据，暂时无法回答这个问题。,"Item descriptions, pictures and video must use the primary language of the eBay listing site. Listing words must be accurate and relate only to the item for sale, so unrelated popular keywords cannot be added to manipulate search.","[""Use the site's primary language"", ""All listing words must describe the item"", ""Unrelated popular keywords are prohibited""]",False,候选答案未覆盖任何关键事实，无法回答，缺少语言要求、关键词描述商品及禁止无关热门关键词三项内容。,,
+q050,multi_hop,亚马逊卖家为提升自己商品评论而提供补偿，与恶意给竞争对手留差评，分别违反什么规则？,"根据检索到的官方资料，可确认：
+- 同样是违规操纵商品评论,如果卖家出于改善自己商品评论和评级的目的,通过不合规的方式(例如:提供补偿、雇佣第三方诱导买家留好评或者为自己的商品购买好评等),那么就违反了买家商品评论政策,违规的卖家将在账户状况页面政策合规清单中的“违反买家商品评论政策”版块收到相应的政策滥用通知。 [C1]
+- 亚马逊禁止卖家试图损害或攻击其他卖家(例如:恶意贬低竞争对手的商品企图改变其商品的评分)。 [C1]
+- 🔹 通过亚马逊买家与卖家消息服务直接联系买家,提供买家报酬(返现)以换取评论。 [C2]
+- 安排家人、好友或员工等为对自己或竞争对手的商品发布不实评论。 [C2]
+- 评论对亚马逊商城起着至关重要的作用,买家可以对商品/服务信息以及对商品/服务的体验进行反馈,让亚马逊商城和卖家不断进步,给买家们提供更好的购物体验。 [C3]
+- 亚马逊始终坚持为卖家构建公平透明的营商环境,同时为消费者提供安全健康的购物环境。 [C3]
+以上内容仅依据当前知识库片段，具体执行前请核对引用原文及最新政策。",为自己商品提供补偿换取好评属于违反买家商品评论政策。以损害其他卖家为目的雇佣第三方或通过虚假订单留下恶意差评，则属于违反公平行事准则。两者都可能受到警告或账户停用等措施。,"[""补偿换好评违反商品评论政策"", ""恶意攻击竞争对手违反公平行事准则"", ""两类违规可能导致警告或停用""]",False,缺少恶意差评违反公平行事准则的明确表述，且未提及两类违规可能导致警告或停用。,,

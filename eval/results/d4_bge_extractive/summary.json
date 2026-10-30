@@ -1,0 +1,58 @@
+{
+  "run_name": "d4_bge_extractive",
+  "started_at": "2026-10-31T01:39:06+08:00",
+  "finished_at": "2026-10-31T01:39:57+08:00",
+  "config": {
+    "backend": "bge_m3",
+    "mode": "extractive",
+    "judge": "deepseek",
+    "top_k": 5,
+    "limit": null,
+    "questions": "eval\\questions.jsonl",
+    "chunks": "data\\processed\\chunks.jsonl"
+  },
+  "metrics": {
+    "total_questions": 60,
+    "answerable_questions": 50,
+    "refusal_questions": 10,
+    "hit_at_5": 1.0,
+    "gold_chunk_recall_at_5": 0.91,
+    "citation_accuracy": 0.9783,
+    "citation_coverage": 0.92,
+    "answer_correctness": 0.3,
+    "refusal_accuracy": 1.0,
+    "answerable_false_refusal": 4,
+    "refusal_false_positive": 0,
+    "correctness_sources": {
+      "manual": 0,
+      "deepseek_auto": 50,
+      "unknown": 0
+    },
+    "latency_ms": {
+      "p50_all": 163.96,
+      "p95_all": 185.49,
+      "p50_answerable": 166.7,
+      "p95_answerable": 188.18
+    },
+    "by_type": {
+      "fact": {
+        "count": 40,
+        "correct": 15,
+        "accuracy": 0.375,
+        "mean_gold_recall_at_k": 0.9625
+      },
+      "multi_hop": {
+        "count": 10,
+        "correct": 0,
+        "accuracy": 0.0,
+        "mean_gold_recall_at_k": 0.7
+      },
+      "refusal": {
+        "count": 10,
+        "correct": 10,
+        "accuracy": 1.0,
+        "mean_gold_recall_at_k": 0.0
+      }
+    }
+  }
+}
