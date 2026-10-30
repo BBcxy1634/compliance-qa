@@ -2,7 +2,7 @@
 
 ## 版本状态
 
-当前版本为 `v1.0-draft`，生成日期 2026-10-31。全部 60 条记录的 `review_status` 均为 `pending_review`，需要人工检查后才能冻结。
+当前版本为 `v1.1-draft`，生成日期 2026-10-31。第一轮人工复核意见已经处理，全部 60 条记录的 `review_status` 仍为 `pending_review`，需要再次检查后才能冻结。
 
 评测集文件：`eval/questions.jsonl`
 
@@ -46,6 +46,7 @@
 使用当前 `bge_m3_semantic` Chroma collection 进行 Top 5 检索烟测：
 
 - 50 道可答题均至少命中一个 gold chunk。
+- 41 道可答题的全部 gold chunk 均进入 Top 5。
 - 10 道拒答题均没有出现相似度达到 0.65 的高置信误命中。
 - 烟测只用于发现坏题，不作为正式 Hit@5。正式指标在 D4 评测脚本中计算。
 
