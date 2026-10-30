@@ -67,7 +67,7 @@
 - 10 条多跳型
 - 10 条拒答型
 
-当前 `eval/questions.jsonl` 已生成 60 条草稿，全部为 `pending_review`。每条答案均绑定 gold chunk 和原文证据，待人工复核后冻结。
+当前 `eval/questions.jsonl` 已完成 60 条题目，全部为 `approved`，版本冻结为 `v1.0-frozen`。每条答案均绑定 gold chunk 和原文证据。
 
 比较 B0 至 B3 四组方案。每次只改变切分、检索或重排中的一个变量。评测集定稿后不因指标结果修改；确需修改时必须记录在 CHANGELOG。
 

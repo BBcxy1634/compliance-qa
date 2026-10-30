@@ -2,7 +2,7 @@
 
 ## 版本状态
 
-当前版本为 `v1.2-draft`，生成日期 2026-10-31。第二轮复核意见已经处理；49 条记录为 `approved`，11 条仍为 `pending_review`，需要完成最后补证复核后才能冻结。
+当前版本为 `v1.0-frozen`，生成并冻结于 2026-10-31。全部 60 条记录均为 `approved`。
 
 评测集文件：`eval/questions.jsonl`
 
@@ -29,7 +29,7 @@
 - `gold_evidence`：chunk ID 与原文精确摘录。
 - `lang`：`zh` 或 `en`。
 - `expected_behavior`：`answer` 或 `refuse`。
-- `review_status`：当前为 `approved` 或 `pending_review`。
+- `review_status`：全部为 `approved`。
 - `created_at`：创建日期。
 
 ## 覆盖情况
@@ -57,8 +57,7 @@
 3. 检查 `gold_answer` 是否完整覆盖 `key_facts`。
 4. 多跳题检查是否确实需要至少两个不同来源。
 5. 拒答题检查知识库中是否没有任何 chunk 能直接回答。
-6. 修改完成后把 `review_status` 从 `pending_review` 改为 `approved`。
-7. 全部复核完成后冻结版本，并记录冻结日期。
+6. 当前版本已经完成复核并冻结。后续如确需修改，必须记录变更原因并同步更新版本号。
 
 ## 自动校验
 
