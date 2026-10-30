@@ -2,7 +2,7 @@
 
 ## 版本状态
 
-当前版本为 `v1.1-draft`，生成日期 2026-10-31。第一轮人工复核意见已经处理，全部 60 条记录的 `review_status` 仍为 `pending_review`，需要再次检查后才能冻结。
+当前版本为 `v1.2-draft`，生成日期 2026-10-31。第二轮复核意见已经处理；49 条记录为 `approved`，11 条仍为 `pending_review`，需要完成最后补证复核后才能冻结。
 
 评测集文件：`eval/questions.jsonl`
 
@@ -29,7 +29,7 @@
 - `gold_evidence`：chunk ID 与原文精确摘录。
 - `lang`：`zh` 或 `en`。
 - `expected_behavior`：`answer` 或 `refuse`。
-- `review_status`：当前为 `pending_review`。
+- `review_status`：当前为 `approved` 或 `pending_review`。
 - `created_at`：创建日期。
 
 ## 覆盖情况
