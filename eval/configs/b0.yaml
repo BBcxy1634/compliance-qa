@@ -1,0 +1,13 @@
+run_name: b0
+experiment:
+  label: B0
+  name: fixed_split_vector_baseline
+  chunking: fixed_512_no_overlap
+  retrieval: bge_m3_vector_top5
+  reranker: none
+backend: bge_m3
+collection: bge_m3_b0
+gold_match: unit
+mode: extractive
+judge: deepseek
+top_k: 5

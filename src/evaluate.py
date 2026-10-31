@@ -48,6 +48,14 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     path.write_text(content + ("\n" if content else ""), encoding="utf-8")
 
 
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def percentile(values: list[float], p: float) -> float:
     if not values:
         return 0.0
@@ -65,6 +73,18 @@ def percentile(values: list[float], p: float) -> float:
 
 def parse_bool(value: Any) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "y", "correct"}
+
+
+def gold_match_key(chunk_id: str, match_mode: str) -> str:
+    """Map a strategy-specific chunk ID to the configured comparison unit."""
+    if match_mode == "exact":
+        return chunk_id
+    if match_mode == "unit":
+        parts = chunk_id.split("#")
+        if len(parts) < 2:
+            raise ValueError(f"Invalid chunk ID for unit matching: {chunk_id}")
+        return "#".join(parts[:2])
+    raise ValueError(f"Unsupported gold match mode: {match_mode}")
 
 
 def load_manual_labels(path: Path | None) -> dict[str, bool]:
@@ -323,13 +343,22 @@ def write_review_csv(path: Path, results: list[dict[str, Any]]) -> None:
             )
 
 
-def write_summary_csv(path: Path, metrics: dict[str, Any]) -> None:
+def write_summary_csv(
+    path: Path,
+    metrics: dict[str, Any],
+    gold_match: str,
+) -> None:
+    recall_label = (
+        "gold_chunk_recall@5"
+        if gold_match == "exact"
+        else "gold_unit_recall@5"
+    )
     rows = [
         ("Hit@5", metrics["hit_at_5"]),
         ("citation_accuracy", metrics["citation_accuracy"]),
         ("answer_correctness", metrics["answer_correctness"]),
         ("refusal_accuracy", metrics["refusal_accuracy"]),
-        ("gold_chunk_recall@5", metrics["gold_chunk_recall_at_5"]),
+        (recall_label, metrics["gold_chunk_recall_at_5"]),
         ("citation_coverage", metrics["citation_coverage"]),
         ("P50_latency_ms", metrics["latency_ms"]["p50_all"]),
         ("P95_latency_ms", metrics["latency_ms"]["p95_all"]),
@@ -353,9 +382,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chunks", type=Path, default=CHUNKS_PATH)
     parser.add_argument("--run-name")
     parser.add_argument("--backend", choices=("bm25", "bge_m3"))
+    parser.add_argument("--collection")
     parser.add_argument("--mode", choices=("extractive", "deepseek"))
     parser.add_argument("--judge", choices=("none", "deepseek"))
     parser.add_argument("--top-k", type=int)
+    parser.add_argument("--gold-match", choices=("exact", "unit"))
     parser.add_argument("--limit", type=int)
     parser.add_argument("--labels", type=Path)
     return parser.parse_args()
@@ -363,18 +394,34 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    config = load_config(args.config)
+    config_path = (
+        args.config if args.config.is_absolute() else ROOT / args.config
+    )
+    questions_path = (
+        args.questions if args.questions.is_absolute() else ROOT / args.questions
+    )
+    chunks_path = (
+        args.chunks if args.chunks.is_absolute() else ROOT / args.chunks
+    )
+    labels_path = (
+        args.labels
+        if args.labels is None or args.labels.is_absolute()
+        else ROOT / args.labels
+    )
+    config = load_config(config_path)
     run_name = args.run_name or config.get("run_name") or "evaluation"
     backend = args.backend or config.get("backend", "bge_m3")
     mode = args.mode or config.get("mode", "extractive")
     judge_mode = args.judge or config.get("judge", "none")
     top_k = args.top_k or int(config.get("top_k", 5))
+    collection = args.collection or config.get("collection", "bge_m3_semantic")
+    gold_match = args.gold_match or config.get("gold_match", "exact")
 
-    questions = load_jsonl(args.questions)
+    questions = load_jsonl(questions_path)
     if args.limit:
         questions = questions[: args.limit]
-    manual_labels = load_manual_labels(args.labels)
-    retriever = create_retriever(backend, args.chunks)
+    manual_labels = load_manual_labels(labels_path)
+    retriever = create_retriever(backend, chunks_path, collection)
     judge = DeepSeekJudge() if judge_mode == "deepseek" else None
 
     run_dir = RESULTS_DIR / run_name
@@ -394,10 +441,19 @@ def main() -> None:
         retrieved = result["hits"]
         retrieved_ids = [hit["chunk_id"] for hit in retrieved]
         gold_ids = set(question["gold_chunks"])
-        found = gold_ids.intersection(retrieved_ids)
+        retrieved_keys = {
+            gold_match_key(chunk_id, gold_match) for chunk_id in retrieved_ids
+        }
+        gold_keys = {
+            gold_match_key(chunk_id, gold_match) for chunk_id in gold_ids
+        }
+        found = gold_keys.intersection(retrieved_keys)
         citations = result.get("citations", [])
-        cited_ids = {citation["chunk_id"] for citation in citations}
-        citation_found = gold_ids.intersection(cited_ids)
+        cited_keys = {
+            gold_match_key(citation["chunk_id"], gold_match)
+            for citation in citations
+        }
+        citation_found = gold_keys.intersection(cited_keys)
 
         row: dict[str, Any] = {
             "id": question["id"],
@@ -412,12 +468,12 @@ def main() -> None:
             "citations": citations,
             "retrieved": retrieved,
             "hit_at_k": bool(found),
-            "gold_recall_at_k": round(len(found) / len(gold_ids), 4)
-            if gold_ids
+            "gold_recall_at_k": round(len(found) / len(gold_keys), 4)
+            if gold_keys
             else 0.0,
             "citation_hit": bool(citation_found),
-            "citation_recall": round(len(citation_found) / len(gold_ids), 4)
-            if gold_ids
+            "citation_recall": round(len(citation_found) / len(gold_keys), 4)
+            if gold_keys
             else 0.0,
             "retrieval_ms": result.get("retrieval_ms"),
             "total_ms": result.get("total_ms"),
@@ -443,16 +499,23 @@ def main() -> None:
     metrics = compute_metrics(results, manual_labels)
     summary = {
         "run_name": run_name,
+        "experiment": config.get("experiment", {}),
         "started_at": started_at,
         "finished_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "input_hashes": {
+            "questions_sha256": file_sha256(questions_path),
+            "chunks_sha256": file_sha256(chunks_path),
+        },
         "config": {
             "backend": backend,
             "mode": mode,
             "judge": judge_mode,
             "top_k": top_k,
+            "collection": collection,
+            "gold_match": gold_match,
             "limit": args.limit,
-            "questions": str(args.questions.relative_to(ROOT)),
-            "chunks": str(args.chunks.relative_to(ROOT)),
+            "questions": str(questions_path.relative_to(ROOT)),
+            "chunks": str(chunks_path.relative_to(ROOT)),
         },
         "metrics": metrics,
     }
@@ -462,7 +525,7 @@ def main() -> None:
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    write_summary_csv(run_dir / "summary.csv", metrics)
+    write_summary_csv(run_dir / "summary.csv", metrics, gold_match)
     write_review_csv(run_dir / "review.csv", results)
     (RESULTS_DIR / "latest_run.json").write_text(
         json.dumps(

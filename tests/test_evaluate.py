@@ -1,6 +1,6 @@
 """Metric tests for the D4 evaluator."""
 
-from src.evaluate import compute_metrics, parse_bool, percentile
+from src.evaluate import compute_metrics, gold_match_key, parse_bool, percentile
 
 
 def test_percentile_interpolates() -> None:
@@ -60,3 +60,9 @@ def test_boolean_label_parser() -> None:
     assert parse_bool("1")
     assert not parse_bool("false")
     assert not parse_bool("")
+
+
+def test_unit_match_maps_strategy_specific_chunks() -> None:
+    assert gold_match_key("source#p01#c01", "exact") == "source#p01#c01"
+    assert gold_match_key("source#p01#c01", "unit") == "source#p01"
+    assert gold_match_key("source#p01#c99", "unit") == "source#p01"

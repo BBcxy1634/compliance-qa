@@ -1,0 +1,2 @@
+﻿version,name,chunking,retrieval,reranker,hit_at_5,gold_recall_at_5,citation_accuracy,answer_correctness,refusal_accuracy,p50_ms,p95_ms
+B0,fixed_split_vector_baseline,fixed_512_no_overlap,bge_m3_vector_top5,none,1.0,0.9767,1.0,0.34,0.9,203.78,231.18

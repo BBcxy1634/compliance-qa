@@ -15,10 +15,14 @@ from src.retrieve import BM25Retriever, BGEVectorRetriever
 from src.schemas import SearchHit
 
 
-def create_retriever(backend: str, chunks_path: Path) -> BM25Retriever | BGEVectorRetriever:
+def create_retriever(
+    backend: str,
+    chunks_path: Path,
+    collection: str = "bge_m3_semantic",
+) -> BM25Retriever | BGEVectorRetriever:
     if backend == "bm25":
         return BM25Retriever.from_jsonl(chunks_path)
-    return BGEVectorRetriever()
+    return BGEVectorRetriever(collection_name=collection)
 
 
 def answer_with_retriever(
@@ -105,6 +109,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("question", nargs="?", help="Question to answer")
     parser.add_argument("--backend", choices=("bm25", "bge_m3"), default="bge_m3")
+    parser.add_argument("--collection", default="bge_m3_semantic")
     parser.add_argument(
         "--mode",
         choices=("extractive", "deepseek"),
@@ -120,7 +125,7 @@ def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     args = parse_args()
-    retriever = create_retriever(args.backend, args.chunks)
+    retriever = create_retriever(args.backend, args.chunks, args.collection)
     if args.question:
         result = answer_with_retriever(
             args.question,
