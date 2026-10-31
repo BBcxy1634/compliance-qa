@@ -1,5 +1,7 @@
 # D5 B0 Baseline 结果
 
+> 说明：本文记录的是抽取式诊断版本。后续已将 B0/B1 正式生成方式统一为 DeepSeek，正式结果见 `docs/b0_b1_deepseek_rerun.md`。
+
 运行日期：2026-10-31  
 状态：已固化  
 人工复核：未执行，答案正确率采用 DeepSeek 辅助判题

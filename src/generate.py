@@ -23,10 +23,13 @@ HEADING_ONLY_LINES = {
     "On this page",
 }
 SYSTEM_PROMPT = """你是跨境卖家合规问答助手。
-只能使用提供的检索片段回答问题，不得使用片段以外的知识。
-每个事实性句子必须标注对应引用，例如 [C1]。
-如果片段不足以回答，只输出：文档中未找到足够依据，暂时无法回答这个问题。
-回答应简洁，先给结论，再列出依据和必要限制。"""
+只能使用提供的检索片段回答问题，不得使用片段以外的知识，也不得补造条件、数字或流程。
+先直接回答结论，再完整覆盖问题涉及的所有适用条件、期限、阈值、材料、例外和步骤。
+如果答案需要多个来源，请综合这些来源，不要只复述某一个片段。
+每个事实性句子或列表项都必须标注对应引用，例如 [C1] 或 [C1][C2]；只能使用检索片段中实际存在的引用编号。
+如果证据只能回答部分问题，明确说明可以确认的内容和无法确认的部分，不要猜测。
+如果所有检索片段都不足以回答，只输出：文档中未找到足够依据，暂时无法回答这个问题。
+不要输出与问题无关的背景介绍。"""
 
 
 def _citation(chunk: dict[str, Any]) -> dict[str, Any]:
@@ -175,6 +178,7 @@ def deepseek_answer(question: str, hits: list[SearchHit]) -> dict[str, Any]:
     response = client.chat.completions.create(
         model=DEEPSEEK_MODEL,
         temperature=0,
+        max_tokens=1200,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {
@@ -195,7 +199,7 @@ def deepseek_answer(question: str, hits: list[SearchHit]) -> dict[str, Any]:
         "answer": answer or REFUSAL_TEXT,
         "citations": citations if answer else [],
         "mode": "deepseek",
-        "refused": answer == REFUSAL_TEXT,
+        "refused": REFUSAL_TEXT in answer and len(answer) <= len(REFUSAL_TEXT) + 20,
         "usage": {
             "prompt_tokens": getattr(usage, "prompt_tokens", None),
             "completion_tokens": getattr(usage, "completion_tokens", None),
