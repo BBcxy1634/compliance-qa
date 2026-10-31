@@ -1,0 +1,56 @@
+{
+  "total_failure_instances": 22,
+  "unique_failed_questions": 11,
+  "count_by_version": {
+    "B0": 9,
+    "B1": 5,
+    "B2": 5,
+    "B3": 3
+  },
+  "category_counts": {
+    "retrieval_incomplete": 6,
+    "retrieval_noise": 6,
+    "generation_incomplete": 8,
+    "hallucination": 0,
+    "citation_mismatch": 0,
+    "refusal_failure": 2,
+    "parse_failure": 0
+  },
+  "category_unique_questions": {
+    "retrieval_incomplete": 5,
+    "retrieval_noise": 2,
+    "generation_incomplete": 4,
+    "hallucination": 0,
+    "citation_mismatch": 0,
+    "refusal_failure": 2,
+    "parse_failure": 0
+  },
+  "final_b3_failures": [
+    {
+      "id": "q023",
+      "category": "generation_incomplete",
+      "exact_gold_recall_at_5": 1.0
+    },
+    {
+      "id": "q032",
+      "category": "retrieval_noise",
+      "exact_gold_recall_at_5": 0.5
+    },
+    {
+      "id": "q049",
+      "category": "retrieval_noise",
+      "exact_gold_recall_at_5": 0.5
+    }
+  ],
+  "observed_categories": [
+    "retrieval_incomplete",
+    "retrieval_noise",
+    "generation_incomplete",
+    "refusal_failure"
+  ],
+  "unobserved_categories": [
+    "hallucination",
+    "citation_mismatch",
+    "parse_failure"
+  ]
+}

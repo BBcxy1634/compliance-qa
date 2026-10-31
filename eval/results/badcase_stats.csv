@@ -1,0 +1,8 @@
+﻿category,label,count,unique_questions
+retrieval_incomplete,检索未召回完整证据,6,5
+retrieval_noise,召回噪声,6,2
+generation_incomplete,生成不完整,8,4
+hallucination,生成幻觉,0,0
+citation_mismatch,引用错配,0,0
+refusal_failure,拒答失败,2,2
+parse_failure,解析失败,0,0

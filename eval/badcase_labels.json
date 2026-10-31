@@ -1,0 +1,90 @@
+{
+  "b0_deepseek:q017": {
+    "category": "generation_incomplete",
+    "fix": "在生成 Prompt 中逐项要求列出兼容性写法与关键词准确性，并在输出后校验关键事实。"
+  },
+  "b0_deepseek:q021": {
+    "category": "refusal_failure",
+    "fix": "拒答前先检查 Top 5 是否命中同一政策页；命中时让生成模型基于上下文判断，而不是直接拒答。"
+  },
+  "b0_deepseek:q023": {
+    "category": "generation_incomplete",
+    "fix": "评价政策题使用条件清单模板，要求分别回答仇恨、亵渎和露骨内容。"
+  },
+  "b0_deepseek:q031": {
+    "category": "retrieval_incomplete",
+    "fix": "对含数字条件的问题扩大候选集，并保证同一公告的相邻 chunk 一起送入上下文。"
+  },
+  "b0_deepseek:q032": {
+    "category": "generation_incomplete",
+    "fix": "清单题按增、删、税则调整三个槽位生成，并在提交前检查每个槽位是否都有依据。"
+  },
+  "b0_deepseek:q037": {
+    "category": "generation_incomplete",
+    "fix": "把 ERP 选择问题拆成平台适配、预算、扩展性和售后四个回答槽位。"
+  },
+  "b0_deepseek:q041": {
+    "category": "retrieval_incomplete",
+    "fix": "多跳申诉题先拆成申诉形式和说明内容两个子问题，再分别检索并合并证据。"
+  },
+  "b0_deepseek:q045": {
+    "category": "retrieval_incomplete",
+    "fix": "海关备案与税务退税分别检索，并要求订仓单、9810、离境和预退税证据同时出现。"
+  },
+  "b0_deepseek:q049": {
+    "category": "retrieval_noise",
+    "fix": "对平台政策问题降低运营类 PPT 的排序权重，优先保留 eBay 官方政策来源。"
+  },
+  "b1_deepseek:q023": {
+    "category": "generation_incomplete",
+    "fix": "评价政策题要求完整列举可移除内容类型，不能只回答与问题表面最接近的一项。"
+  },
+  "b1_deepseek:q032": {
+    "category": "retrieval_incomplete",
+    "fix": "对同一公告的连续 chunk 做父子文档扩展，避免只召回清单增加项而漏掉删除项。"
+  },
+  "b1_deepseek:q037": {
+    "category": "generation_incomplete",
+    "fix": "将业务发展后的稳定性和扩展性明确放入 ERP 选择清单，避免被判断为非初创期要求。"
+  },
+  "b1_deepseek:q048": {
+    "category": "retrieval_incomplete",
+    "fix": "对受限商品题补充“未列示例不等于允许”以及卖家责任的强制证据槽位。"
+  },
+  "b1_deepseek:q049": {
+    "category": "retrieval_noise",
+    "fix": "识别语言和关键词多跳意图，分别检索 item description 与 search manipulation 官方政策。"
+  },
+  "b2_deepseek:q023": {
+    "category": "generation_incomplete",
+    "fix": "输出后检查组略的并列内容类型，缺少亵渎或露骨内容时触发一次补充生成。"
+  },
+  "b2_deepseek:q032": {
+    "category": "retrieval_noise",
+    "fix": "限制跨公告来源占比，优先保留同一清单文档的相邻 chunk，避免无关海关公告占据 Top 5。"
+  },
+  "b2_deepseek:q044": {
+    "category": "refusal_failure",
+    "fix": "多跳问题检测到只覆盖一半 gold 单元时触发二次检索，而不是直接拒答。"
+  },
+  "b2_deepseek:q048": {
+    "category": "retrieval_incomplete",
+    "fix": "为电池产品题强制检索受限商品示例说明和卖家责任条款。"
+  },
+  "b2_deepseek:q049": {
+    "category": "retrieval_noise",
+    "fix": "为平台政策题增加官方来源过滤，排除平台运营经验类 PPT 的政策回答资格。"
+  },
+  "b3_deepseek:q023": {
+    "category": "generation_incomplete",
+    "fix": "对包含并列内容的政策题启用关键事实完整性复检，缺失时补答。"
+  },
+  "b3_deepseek:q032": {
+    "category": "retrieval_noise",
+    "fix": "按同一 source_id 做相邻 chunk 扩展，确保删除项与税则调整所在的 c02 始终进入上下文。"
+  },
+  "b3_deepseek:q049": {
+    "category": "retrieval_noise",
+    "fix": "对跨语言多跳问题执行问题分解，并限制非官方 PPT 来源进入政策证据。"
+  }
+}
