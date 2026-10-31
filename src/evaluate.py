@@ -392,6 +392,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--candidate-k", type=int)
     parser.add_argument("--rrf-k", type=int)
     parser.add_argument("--rerank-candidate-k", type=int)
+    parser.add_argument(
+        "--thinking",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+    )
+    parser.add_argument("--max-tokens", type=int)
     parser.add_argument("--gold-match", choices=("exact", "unit"))
     parser.add_argument("--limit", type=int)
     parser.add_argument("--labels", type=Path)
@@ -427,6 +433,12 @@ def main() -> None:
     rerank_candidate_k = args.rerank_candidate_k or int(
         config.get("rerank_candidate_k", 8)
     )
+    thinking = (
+        args.thinking
+        if args.thinking is not None
+        else bool(config.get("thinking", True))
+    )
+    max_tokens = args.max_tokens or config.get("max_tokens")
 
     questions = load_jsonl(questions_path)
     if args.limit:
@@ -455,6 +467,8 @@ def main() -> None:
             backend=backend,
             mode=mode,
             top_k=top_k,
+            thinking=thinking,
+            max_tokens=max_tokens,
         )
         retrieved = result["hits"]
         retrieved_ids = [hit["chunk_id"] for hit in retrieved]
@@ -534,6 +548,8 @@ def main() -> None:
             "candidate_k": candidate_k,
             "rrf_k": rrf_k,
             "rerank_candidate_k": rerank_candidate_k,
+            "thinking": thinking,
+            "max_tokens": max_tokens,
             "limit": args.limit,
             "questions": str(questions_path.relative_to(ROOT)),
             "chunks": str(chunks_path.relative_to(ROOT)),

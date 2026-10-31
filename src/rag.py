@@ -68,13 +68,21 @@ def answer_with_retriever(
     backend: str,
     mode: str,
     top_k: int,
+    thinking: bool = True,
+    max_tokens: int | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     hits = retriever.search(question, top_k=top_k)
     retrieval_ms = (time.perf_counter() - started) * 1000
+    retrieval_breakdown = getattr(retriever, "last_timing_ms", {})
     min_score = 0.25 if backend == "bge_m3" else 0.5
     if mode == "deepseek":
-        result = deepseek_answer(question, hits)
+        result = deepseek_answer(
+            question,
+            hits,
+            thinking=thinking,
+            **({"max_tokens": max_tokens} if max_tokens is not None else {}),
+        )
     else:
         result = extractive_answer(
             question,
@@ -83,12 +91,16 @@ def answer_with_retriever(
             enforce_term_coverage=backend == "bm25",
             backend=backend,
         )
+    total_ms = (time.perf_counter() - started) * 1000
     result.update(
         {
             "question": question,
             "backend": backend,
+            "thinking": thinking,
             "retrieval_ms": round(retrieval_ms, 2),
-            "total_ms": round((time.perf_counter() - started) * 1000, 2),
+            "retrieval_breakdown": retrieval_breakdown,
+            "generation_ms": round(max(0.0, total_ms - retrieval_ms), 2),
+            "total_ms": round(total_ms, 2),
             "hits": [
                 {
                     "score": round(hit.score, 4),
@@ -112,6 +124,8 @@ def answer_question(
     mode: str,
     chunks_path: Path,
     top_k: int,
+    thinking: bool = True,
+    max_tokens: int | None = None,
 ) -> dict[str, Any]:
     retriever = create_retriever(backend, chunks_path)
     return answer_with_retriever(
@@ -120,6 +134,8 @@ def answer_question(
         backend=backend,
         mode=mode,
         top_k=top_k,
+        thinking=thinking,
+        max_tokens=max_tokens,
     )
 
 
@@ -158,6 +174,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chunks", type=Path, default=DEFAULT_CHUNKS_PATH)
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
     parser.add_argument("--json", action="store_true", dest="as_json")
+    parser.add_argument(
+        "--thinking",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
     return parser.parse_args()
 
 
@@ -173,6 +194,7 @@ def main() -> None:
             backend=args.backend,
             mode=args.mode,
             top_k=args.top_k,
+            thinking=args.thinking,
         )
         print_result(result, args.as_json)
         return
@@ -190,6 +212,7 @@ def main() -> None:
             backend=args.backend,
             mode=args.mode,
             top_k=args.top_k,
+            thinking=args.thinking,
         )
         print_result(result, args.as_json)
 

@@ -9,5 +9,7 @@ backend: bge_m3
 collection: bge_m3_b0
 gold_match: unit
 mode: deepseek
+thinking: true
+max_tokens: 1200
 judge: deepseek
 top_k: 5

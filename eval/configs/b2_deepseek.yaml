@@ -11,5 +11,7 @@ gold_match: unit
 candidate_k: 20
 rrf_k: 60
 mode: deepseek
+thinking: true
+max_tokens: 1200
 judge: deepseek
 top_k: 5

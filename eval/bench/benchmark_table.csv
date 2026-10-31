@@ -1,0 +1,4 @@
+﻿version,samples,model,thinking,max_tokens,pricing_period,total_p50_ms,total_p95_ms,retrieval_p95_ms,rerank_p95_ms,generation_p95_ms,within_3s_rate,mean_prompt_tokens,mean_completion_tokens,mean_cost_cny,p95_cost_cny,cost_under_001_cny,latency_under_3s
+B1,100,deepseek-flash,True,1200,off_peak,1640.25,3366.01,157.18,0.0,3218.25,0.84,1750.16,206.36,0.001044,0.00256437,True,False
+B1-Fast,100,deepseek-flash,False,600,off_peak,1643.34,3313.1,213.04,0.0,3156.83,0.87,1766.16,195.24,0.0010018,0.00228419,True,False
+B3,100,deepseek-flash,True,1200,off_peak,8912.1,12313.43,8846.61,8686.49,3945.74,0.0,1741.49,222.64,0.00111053,0.00269793,True,False

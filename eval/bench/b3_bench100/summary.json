@@ -1,0 +1,80 @@
+{
+  "run_name": "b3_bench100",
+  "config": {
+    "run_name": "b3_deepseek",
+    "experiment": {
+      "label": "B3",
+      "name": "hybrid_rrf_top8_rerank_top5_deepseek",
+      "chunking": "semantic_title_paragraph_overlap_64",
+      "retrieval": "bge_m3_bm25_rrf_top8",
+      "reranker": "bge_reranker_v2_m3"
+    },
+    "backend": "rerank",
+    "collection": "bge_m3_semantic",
+    "gold_match": "unit",
+    "candidate_k": 20,
+    "rrf_k": 60,
+    "rerank_candidate_k": 8,
+    "mode": "deepseek",
+    "judge": "not_run_in_benchmark",
+    "top_k": 5,
+    "thinking": true,
+    "max_tokens": 1200
+  },
+  "started_at": "2026-10-31T20:45:00+08:00",
+  "finished_at": "2026-10-31T20:59:04+08:00",
+  "samples_requested": 100,
+  "samples_successful": 100,
+  "samples_failed": 0,
+  "warmup_requests": 3,
+  "cache_policy": "application answer cache disabled",
+  "answer_models": [
+    "deepseek-flash"
+  ],
+  "pricing_periods": [
+    "off_peak"
+  ],
+  "pricing": {
+    "source_url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+    "captured_at": "2026-10-31",
+    "currency": "CNY",
+    "unit": "per_million_tokens"
+  },
+  "latency_ms": {
+    "total_p50": 8912.1,
+    "total_p95": 12313.43,
+    "total_mean": 8168.58,
+    "total_min": 3842.13,
+    "total_max": 13248.03,
+    "retrieval_p50": 7446.8,
+    "retrieval_p95": 8846.61,
+    "retrieval_mean": 6351.19,
+    "generation_p50": 1512.3,
+    "generation_p95": 3945.74,
+    "generation_mean": 1817.39,
+    "rerank_p50": 7297.44,
+    "rerank_p95": 8686.49,
+    "rerank_mean": 6200.04,
+    "within_3s_rate": 0.0
+  },
+  "tokens": {
+    "mean_prompt": 1741.49,
+    "mean_completion": 222.64,
+    "total_prompt": 174149,
+    "total_completion": 22264
+  },
+  "cost_cny": {
+    "total": 0.111053,
+    "mean": 0.00111053,
+    "p50": 0.00082122,
+    "p95": 0.00269793
+  },
+  "errors": [],
+  "inputs": {
+    "questions_sha256": "f9f272b912dda39bd95f030385348d6cbfa4a5372cd4f07b60266bab6ac1a9b5",
+    "chunks_sha256": "b678172aebb777ec9a0e4e3c131b4640df16f55d85871b2b182ee346a5c6f027"
+  },
+  "benchmark_scope": "retrieval_and_generation; judge_excluded",
+  "thinking": true,
+  "max_tokens": 1200
+}

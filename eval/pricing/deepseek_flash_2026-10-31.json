@@ -1,0 +1,23 @@
+{
+  "currency": "CNY",
+  "unit": "per_million_tokens",
+  "source_url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+  "captured_at": "2026-10-31",
+  "model_alias": "deepseek-chat",
+  "resolved_model": "deepseek-flash",
+  "off_peak": {
+    "input_cache_hit": 0.02,
+    "input_cache_miss": 1.0,
+    "output": 4.0
+  },
+  "peak": {
+    "input_cache_hit": 0.04,
+    "input_cache_miss": 2.0,
+    "output": 8.0
+  },
+  "peak_hours_cn": [
+    "Monday-Friday 09:00-12:00",
+    "Monday-Friday 14:00-18:00"
+  ],
+  "note": "Weekends and Chinese statutory holidays are off-peak. Prices captured from the official DeepSeek pricing page on 2026-10-31."
+}

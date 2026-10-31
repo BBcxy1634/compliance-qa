@@ -12,5 +12,7 @@ candidate_k: 20
 rrf_k: 60
 rerank_candidate_k: 8
 mode: deepseek
+thinking: true
+max_tokens: 1200
 judge: deepseek
 top_k: 5

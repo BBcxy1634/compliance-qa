@@ -1,0 +1,15 @@
+run_name: b1_fast
+experiment:
+  label: B1-Fast
+  name: semantic_split_vector_top5_deepseek_nonthinking
+  chunking: semantic_title_paragraph_overlap_64
+  retrieval: bge_m3_vector_top5
+  reranker: none
+backend: bge_m3
+collection: bge_m3_semantic
+gold_match: unit
+mode: deepseek
+thinking: false
+max_tokens: 600
+judge: deepseek
+top_k: 5

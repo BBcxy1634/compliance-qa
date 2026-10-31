@@ -1,0 +1,77 @@
+{
+  "run_name": "b1_fast_bench100",
+  "config": {
+    "run_name": "b1_fast",
+    "experiment": {
+      "label": "B1-Fast",
+      "name": "semantic_split_vector_top5_deepseek_nonthinking",
+      "chunking": "semantic_title_paragraph_overlap_64",
+      "retrieval": "bge_m3_vector_top5",
+      "reranker": "none"
+    },
+    "backend": "bge_m3",
+    "collection": "bge_m3_semantic",
+    "gold_match": "unit",
+    "mode": "deepseek",
+    "thinking": false,
+    "max_tokens": 600,
+    "judge": "not_run_in_benchmark",
+    "top_k": 5
+  },
+  "benchmark_scope": "retrieval_and_generation; judge_excluded",
+  "started_at": "2026-10-31T21:12:11+08:00",
+  "finished_at": "2026-10-31T21:15:29+08:00",
+  "samples_requested": 100,
+  "samples_successful": 100,
+  "samples_failed": 0,
+  "warmup_requests": 3,
+  "cache_policy": "application answer cache disabled",
+  "thinking": false,
+  "max_tokens": 600,
+  "answer_models": [
+    "deepseek-flash"
+  ],
+  "pricing_periods": [
+    "off_peak"
+  ],
+  "pricing": {
+    "source_url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing",
+    "captured_at": "2026-10-31",
+    "currency": "CNY",
+    "unit": "per_million_tokens"
+  },
+  "latency_ms": {
+    "total_p50": 1643.34,
+    "total_p95": 3313.1,
+    "total_mean": 1918.29,
+    "total_min": 730.87,
+    "total_max": 4109.76,
+    "retrieval_p50": 151.83,
+    "retrieval_p95": 213.04,
+    "retrieval_mean": 160.96,
+    "generation_p50": 1475.87,
+    "generation_p95": 3156.83,
+    "generation_mean": 1757.34,
+    "rerank_p50": 0.0,
+    "rerank_p95": 0.0,
+    "rerank_mean": 0.0,
+    "within_3s_rate": 0.87
+  },
+  "tokens": {
+    "mean_prompt": 1766.16,
+    "mean_completion": 195.24,
+    "total_prompt": 176616,
+    "total_completion": 19524
+  },
+  "cost_cny": {
+    "total": 0.10018,
+    "mean": 0.0010018,
+    "p50": 0.00079442,
+    "p95": 0.00228419
+  },
+  "errors": [],
+  "inputs": {
+    "questions_sha256": "f9f272b912dda39bd95f030385348d6cbfa4a5372cd4f07b60266bab6ac1a9b5",
+    "chunks_sha256": "b678172aebb777ec9a0e4e3c131b4640df16f55d85871b2b182ee346a5c6f027"
+  }
+}

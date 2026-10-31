@@ -8,6 +8,7 @@ from typing import Any
 from src.config import (
     DEEPSEEK_API_KEY,
     DEEPSEEK_BASE_URL,
+    DEEPSEEK_MAX_TOKENS,
     DEEPSEEK_MODEL,
 )
 from src.retrieve import tokenize
@@ -29,7 +30,7 @@ SYSTEM_PROMPT = """你是跨境卖家合规问答助手。
 每个事实性句子或列表项都必须标注对应引用，例如 [C1] 或 [C1][C2]；只能使用检索片段中实际存在的引用编号。
 如果证据只能回答部分问题，明确说明可以确认的内容和无法确认的部分，不要猜测。
 如果所有检索片段都不足以回答，只输出：文档中未找到足够依据，暂时无法回答这个问题。
-不要输出与问题无关的背景介绍。"""
+回答必须完整覆盖问题所需事实，但要精炼，避免重复、复述整段资料和无关背景。"""
 
 
 def _citation(chunk: dict[str, Any]) -> dict[str, Any]:
@@ -162,7 +163,13 @@ def build_context(hits: list[SearchHit]) -> str:
     return "\n\n".join(blocks)
 
 
-def deepseek_answer(question: str, hits: list[SearchHit]) -> dict[str, Any]:
+def deepseek_answer(
+    question: str,
+    hits: list[SearchHit],
+    *,
+    thinking: bool = True,
+    max_tokens: int = DEEPSEEK_MAX_TOKENS,
+) -> dict[str, Any]:
     """Generate an answer through the DeepSeek OpenAI-compatible API."""
     if not DEEPSEEK_API_KEY:
         raise RuntimeError(
@@ -178,7 +185,8 @@ def deepseek_answer(question: str, hits: list[SearchHit]) -> dict[str, Any]:
     response = client.chat.completions.create(
         model=DEEPSEEK_MODEL,
         temperature=0,
-        max_tokens=1200,
+        max_tokens=max_tokens,
+        extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {
@@ -194,15 +202,22 @@ def deepseek_answer(question: str, hits: list[SearchHit]) -> dict[str, Any]:
         citation["citation_id"] = f"C{index}"
         citation["score"] = round(hit.score, 4)
         citations.append(citation)
-    usage = response.usage
+    usage = (
+        response.usage.model_dump()
+        if hasattr(response.usage, "model_dump")
+        else {
+            "prompt_tokens": getattr(response.usage, "prompt_tokens", None),
+            "completion_tokens": getattr(response.usage, "completion_tokens", None),
+            "total_tokens": getattr(response.usage, "total_tokens", None),
+        }
+    )
     return {
         "answer": answer or REFUSAL_TEXT,
         "citations": citations if answer else [],
         "mode": "deepseek",
+        "thinking": thinking,
+        "max_tokens": max_tokens,
         "refused": REFUSAL_TEXT in answer and len(answer) <= len(REFUSAL_TEXT) + 20,
-        "usage": {
-            "prompt_tokens": getattr(usage, "prompt_tokens", None),
-            "completion_tokens": getattr(usage, "completion_tokens", None),
-            "total_tokens": getattr(usage, "total_tokens", None),
-        },
+        "model": response.model,
+        "usage": usage,
     }

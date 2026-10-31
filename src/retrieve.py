@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -214,16 +215,28 @@ class RerankedRetriever:
         self.initial_k = initial_k
 
     def search(self, query: str, top_k: int = 5) -> list[SearchHit]:
+        started = time.perf_counter()
         candidates = self.base_retriever.search(
             query,
             top_k=max(self.initial_k, top_k),
         )
+        base_retrieval_ms = (time.perf_counter() - started) * 1000
         if not candidates:
+            self.last_timing_ms = {
+                "base_retrieval_ms": round(base_retrieval_ms, 2),
+                "rerank_ms": 0.0,
+            }
             return []
+        rerank_started = time.perf_counter()
         scores = self.reranker.score(
             query,
             [candidate.chunk["text"] for candidate in candidates],
         )
+        rerank_ms = (time.perf_counter() - rerank_started) * 1000
+        self.last_timing_ms = {
+            "base_retrieval_ms": round(base_retrieval_ms, 2),
+            "rerank_ms": round(rerank_ms, 2),
+        }
         ranked = sorted(
             zip(candidates, scores),
             key=lambda item: item[1],
