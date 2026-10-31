@@ -62,7 +62,7 @@ B0 的检索链路已经很强：50 道可答题全部在 Top 5 中命中至少�
 - `eval/results/b0/summary.json`：完整配置、输入哈希和指标。
 - `eval/results/b0/summary.csv`：可直接引用的指标表。
 - `eval/results/b0/review.csv`：逐题答案和自动判题结果。
-- `eval/results/baseline_table.csv`：由脚本生成的 B0-B3 汇总表，当前包含 B0-B2。
+- `eval/results/baseline_table.csv`：由脚本生成的 B0-B3 汇总表，当前包含 B0-B3。
 - `eval/results/baseline_table.json`：同一汇总表的结构化版本。
 - `chroma_db/`：本地 collection `bge_m3_b0`，334 条向量，不提交 Git。
 

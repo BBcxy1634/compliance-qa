@@ -87,7 +87,7 @@ B2 的意义不是证明混合检索总是提升，而是证明在当前高召�
 - `eval/configs/b2_deepseek.yaml`：B2 实验配置。
 - `eval/results/b2_deepseek/summary.json`：B2 配置、输入哈希和指标。
 - `eval/results/b2_deepseek/summary.csv`：B2 指标表。
-- `eval/results/baseline_table.csv`：当前 B0-B2 对比表。
+- `eval/results/baseline_table.csv`：当前 B0-B3 对比表。
 - `src/retrieve.py`：BM25、BGE-M3 和 RRF 混合检索实现。
 
 ## 复现命令

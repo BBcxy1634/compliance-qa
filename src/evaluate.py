@@ -381,13 +381,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--questions", type=Path, default=QUESTIONS_PATH)
     parser.add_argument("--chunks", type=Path, default=CHUNKS_PATH)
     parser.add_argument("--run-name")
-    parser.add_argument("--backend", choices=("bm25", "bge_m3", "hybrid"))
+    parser.add_argument(
+        "--backend",
+        choices=("bm25", "bge_m3", "hybrid", "rerank"),
+    )
     parser.add_argument("--collection")
     parser.add_argument("--mode", choices=("extractive", "deepseek"))
     parser.add_argument("--judge", choices=("none", "deepseek"))
     parser.add_argument("--top-k", type=int)
     parser.add_argument("--candidate-k", type=int)
     parser.add_argument("--rrf-k", type=int)
+    parser.add_argument("--rerank-candidate-k", type=int)
     parser.add_argument("--gold-match", choices=("exact", "unit"))
     parser.add_argument("--limit", type=int)
     parser.add_argument("--labels", type=Path)
@@ -420,6 +424,9 @@ def main() -> None:
     gold_match = args.gold_match or config.get("gold_match", "exact")
     candidate_k = args.candidate_k or int(config.get("candidate_k", 20))
     rrf_k = args.rrf_k or int(config.get("rrf_k", 60))
+    rerank_candidate_k = args.rerank_candidate_k or int(
+        config.get("rerank_candidate_k", 8)
+    )
 
     questions = load_jsonl(questions_path)
     if args.limit:
@@ -431,6 +438,7 @@ def main() -> None:
         collection,
         candidate_k=candidate_k,
         rrf_k=rrf_k,
+        rerank_candidate_k=rerank_candidate_k,
     )
     judge = DeepSeekJudge() if judge_mode == "deepseek" else None
 
@@ -525,6 +533,7 @@ def main() -> None:
             "gold_match": gold_match,
             "candidate_k": candidate_k,
             "rrf_k": rrf_k,
+            "rerank_candidate_k": rerank_candidate_k,
             "limit": args.limit,
             "questions": str(questions_path.relative_to(ROOT)),
             "chunks": str(chunks_path.relative_to(ROOT)),

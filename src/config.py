@@ -30,6 +30,7 @@ if MODEL_CACHE_DIR.exists():
 
 EMBEDDING_MAX_SEQ_LENGTH = int(os.getenv("EMBEDDING_MAX_SEQ_LENGTH", "1024"))
 RERANKER_MODEL = os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-v2-m3")
+RERANKER_MAX_LENGTH = int(os.getenv("RERANKER_MAX_LENGTH", "512"))
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
@@ -49,4 +50,19 @@ def resolve_embedding_model(model_name: str = EMBEDDING_MODEL) -> str:
         return model_name
     ref = ref_path.read_text(encoding="utf-8").strip()
     snapshot = MODEL_CACHE_DIR / "snapshots" / ref
+    return str(snapshot) if snapshot.exists() else model_name
+
+
+def resolve_reranker_model(model_name: str = RERANKER_MODEL) -> str:
+    """Return the cached reranker snapshot when it is already available."""
+    if model_name != RERANKER_MODEL:
+        return model_name
+    model_cache = (
+        HF_HOME / "hub" / f"models--{RERANKER_MODEL.replace('/', '--')}"
+    )
+    ref_path = model_cache / "refs" / "main"
+    if not ref_path.exists():
+        return model_name
+    ref = ref_path.read_text(encoding="utf-8").strip()
+    snapshot = model_cache / "snapshots" / ref
     return str(snapshot) if snapshot.exists() else model_name

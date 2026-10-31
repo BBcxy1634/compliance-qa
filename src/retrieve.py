@@ -14,7 +14,10 @@ from src.config import (
     CHROMA_DIR,
     EMBEDDING_MAX_SEQ_LENGTH,
     EMBEDDING_MODEL,
+    RERANKER_MAX_LENGTH,
+    RERANKER_MODEL,
     resolve_embedding_model,
+    resolve_reranker_model,
 )
 from src.schemas import SearchHit
 
@@ -57,6 +60,7 @@ STOPWORDS = {
 }
 DEFAULT_HYBRID_CANDIDATE_K = 20
 DEFAULT_RRF_K = 60
+DEFAULT_RERANK_CANDIDATE_K = 8
 
 
 def tokenize(text: str) -> list[str]:
@@ -160,6 +164,74 @@ class HybridRetriever:
         return [
             SearchHit(chunk=chunks[chunk_id], score=score)
             for chunk_id, score in ranked[:top_k]
+        ]
+
+
+class CrossEncoderReranker:
+    """Lazy CPU reranker for query-document relevance scoring."""
+
+    def __init__(
+        self,
+        model_name: str = RERANKER_MODEL,
+        *,
+        max_length: int = RERANKER_MAX_LENGTH,
+        batch_size: int = 8,
+    ) -> None:
+        from sentence_transformers import CrossEncoder
+
+        self.model = CrossEncoder(
+            resolve_reranker_model(model_name),
+            device="cpu",
+            max_length=max_length,
+        )
+        self.batch_size = batch_size
+
+    def score(self, query: str, texts: list[str]) -> list[float]:
+        if not texts:
+            return []
+        scores = self.model.predict(
+            [(query, text) for text in texts],
+            batch_size=self.batch_size,
+            show_progress_bar=False,
+        )
+        return [float(score) for score in scores]
+
+
+class RerankedRetriever:
+    """Retrieve a wider candidate set, then rerank it to the final Top K."""
+
+    def __init__(
+        self,
+        base_retriever: HybridRetriever,
+        reranker: CrossEncoderReranker,
+        *,
+        initial_k: int = DEFAULT_RERANK_CANDIDATE_K,
+    ) -> None:
+        if initial_k < 1:
+            raise ValueError("initial_k must be positive")
+        self.base_retriever = base_retriever
+        self.reranker = reranker
+        self.initial_k = initial_k
+
+    def search(self, query: str, top_k: int = 5) -> list[SearchHit]:
+        candidates = self.base_retriever.search(
+            query,
+            top_k=max(self.initial_k, top_k),
+        )
+        if not candidates:
+            return []
+        scores = self.reranker.score(
+            query,
+            [candidate.chunk["text"] for candidate in candidates],
+        )
+        ranked = sorted(
+            zip(candidates, scores),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        return [
+            SearchHit(chunk=candidate.chunk, score=score)
+            for candidate, score in ranked[:top_k]
         ]
 
 

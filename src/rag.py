@@ -14,7 +14,9 @@ from src.generate import deepseek_answer, extractive_answer
 from src.retrieve import (
     BM25Retriever,
     BGEVectorRetriever,
+    CrossEncoderReranker,
     HybridRetriever,
+    RerankedRetriever,
 )
 from src.schemas import SearchHit
 
@@ -26,7 +28,8 @@ def create_retriever(
     *,
     candidate_k: int = 20,
     rrf_k: int = 60,
-) -> BM25Retriever | BGEVectorRetriever | HybridRetriever:
+    rerank_candidate_k: int = 8,
+) -> BM25Retriever | BGEVectorRetriever | HybridRetriever | RerankedRetriever:
     if backend == "bm25":
         return BM25Retriever.from_jsonl(chunks_path)
     if backend == "bge_m3":
@@ -38,13 +41,30 @@ def create_retriever(
             candidate_k=candidate_k,
             rrf_k=rrf_k,
         )
+    if backend == "rerank":
+        hybrid = HybridRetriever(
+            BGEVectorRetriever(collection_name=collection),
+            BM25Retriever.from_jsonl(chunks_path),
+            candidate_k=candidate_k,
+            rrf_k=rrf_k,
+        )
+        return RerankedRetriever(
+            hybrid,
+            CrossEncoderReranker(),
+            initial_k=rerank_candidate_k,
+        )
     raise ValueError(f"Unsupported backend: {backend}")
 
 
 def answer_with_retriever(
     question: str,
     *,
-    retriever: BM25Retriever | BGEVectorRetriever | HybridRetriever,
+    retriever: (
+        BM25Retriever
+        | BGEVectorRetriever
+        | HybridRetriever
+        | RerankedRetriever
+    ),
     backend: str,
     mode: str,
     top_k: int,
@@ -126,7 +146,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("question", nargs="?", help="Question to answer")
     parser.add_argument(
         "--backend",
-        choices=("bm25", "bge_m3", "hybrid"),
+        choices=("bm25", "bge_m3", "hybrid", "rerank"),
         default="bge_m3",
     )
     parser.add_argument("--collection", default="bge_m3_semantic")
