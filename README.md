@@ -95,6 +95,20 @@ python -m pytest -q
 
 B3 **不是最终默认配置**，而是项目的质量上限实验和可选高质量模式。
 
+## Gradio Demo
+
+在 `.env` 配置 `DEEPSEEK_API_KEY` 后启动：
+
+```powershell
+.\.venv\Scripts\python.exe app.py --port 7860
+```
+
+浏览器访问 `http://127.0.0.1:7860`。页面默认使用 B1 Fast，也可以切换到 B3 高质量模式。第一次加载 B3 reranker 时，CPU 环境可能额外等待约 30 秒。
+
+![Fast 模式 Demo](docs/assets/demo-fast.png)
+
+Demo 提供 Fast 正常回答、无依据拒答、B3 多跳和移动端布局验证。完整演示题、3 分钟讲解脚本和视频录制步骤见 [D13 Demo 指南](docs/d13_demo.md)。
+
 ## GPU 模式
 
 当前代码会自动检测 CUDA：
@@ -143,4 +157,4 @@ compliance-qa/
 - B3 CPU 延迟过高，只适合按需启用。
 - q032、q049 仍存在精确 chunk 覆盖不足。
 - 自动判题结果尚未完成人工复核。
-- Gradio Demo 将在 D13 接入。
+- Demo 为单轮问答，不保存会话历史；B3 首次加载在 CPU 上较慢。

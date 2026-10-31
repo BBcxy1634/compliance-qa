@@ -196,12 +196,16 @@ def deepseek_answer(
         ],
     )
     answer = (response.choices[0].message.content or "").strip()
+    refused = (
+        REFUSAL_TEXT in answer and len(answer) <= len(REFUSAL_TEXT) + 20
+    )
     citations = []
-    for index, hit in enumerate(hits, 1):
-        citation = _citation(hit.chunk)
-        citation["citation_id"] = f"C{index}"
-        citation["score"] = round(hit.score, 4)
-        citations.append(citation)
+    if not refused:
+        for index, hit in enumerate(hits, 1):
+            citation = _citation(hit.chunk)
+            citation["citation_id"] = f"C{index}"
+            citation["score"] = round(hit.score, 4)
+            citations.append(citation)
     usage = (
         response.usage.model_dump()
         if hasattr(response.usage, "model_dump")
@@ -213,11 +217,11 @@ def deepseek_answer(
     )
     return {
         "answer": answer or REFUSAL_TEXT,
-        "citations": citations if answer else [],
+        "citations": citations,
         "mode": "deepseek",
         "thinking": thinking,
         "max_tokens": max_tokens,
-        "refused": REFUSAL_TEXT in answer and len(answer) <= len(REFUSAL_TEXT) + 20,
+        "refused": refused,
         "model": response.model,
         "usage": usage,
     }
