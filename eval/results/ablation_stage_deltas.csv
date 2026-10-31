@@ -1,0 +1,5 @@
+﻿stage,variable,change,hit_at_5,gold_recall_at_5,citation_accuracy,answer_correctness,fact_accuracy,multi_hop_accuracy,refusal_accuracy,answerable_false_refusal,refusal_false_positive,p50_ms,p95_ms
+B0->B1,切分方式,固定切分 -> 语义切分,0.0,0.0,0.0,0.08,0.075,0.1,0.0,-1.0,0.0,95.74,-253.33
+B1->B2,检索方式,纯向量检索 -> 混合检索,0.0,-0.0034,0.0,0.0,0.025,-0.1,0.0,1.0,0.0,-145.06,413.91
+B2->B3,重排,无重排 -> bge-reranker-v2-m3,0.0,0.0034,0.0,0.04,0.0,0.2,0.0,-1.0,0.0,7083.55,8282.99
+B0->B3,累计,全部三个变量,0.0,0.0,0.0,0.12,0.1,0.2,0.0,-1.0,0.0,7034.23,8443.57

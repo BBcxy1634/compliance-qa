@@ -1,0 +1,84 @@
+{
+  "versions": [
+    "B0",
+    "B1",
+    "B2",
+    "B3"
+  ],
+  "stages": [
+    {
+      "stage": "B0->B1",
+      "variable": "切分方式",
+      "change": "固定切分 -> 语义切分",
+      "hit_at_5": 0.0,
+      "gold_recall_at_5": 0.0,
+      "citation_accuracy": 0.0,
+      "answer_correctness": 0.08,
+      "fact_accuracy": 0.075,
+      "multi_hop_accuracy": 0.1,
+      "refusal_accuracy": 0.0,
+      "answerable_false_refusal": -1.0,
+      "refusal_false_positive": 0.0,
+      "p50_ms": 95.74,
+      "p95_ms": -253.33
+    },
+    {
+      "stage": "B1->B2",
+      "variable": "检索方式",
+      "change": "纯向量检索 -> 混合检索",
+      "hit_at_5": 0.0,
+      "gold_recall_at_5": -0.0034,
+      "citation_accuracy": 0.0,
+      "answer_correctness": 0.0,
+      "fact_accuracy": 0.025,
+      "multi_hop_accuracy": -0.1,
+      "refusal_accuracy": 0.0,
+      "answerable_false_refusal": 1.0,
+      "refusal_false_positive": 0.0,
+      "p50_ms": -145.06,
+      "p95_ms": 413.91
+    },
+    {
+      "stage": "B2->B3",
+      "variable": "重排",
+      "change": "无重排 -> bge-reranker-v2-m3",
+      "hit_at_5": 0.0,
+      "gold_recall_at_5": 0.0034,
+      "citation_accuracy": 0.0,
+      "answer_correctness": 0.04,
+      "fact_accuracy": 0.0,
+      "multi_hop_accuracy": 0.2,
+      "refusal_accuracy": 0.0,
+      "answerable_false_refusal": -1.0,
+      "refusal_false_positive": 0.0,
+      "p50_ms": 7083.55,
+      "p95_ms": 8282.99
+    },
+    {
+      "stage": "B0->B3",
+      "variable": "累计",
+      "change": "全部三个变量",
+      "hit_at_5": 0.0,
+      "gold_recall_at_5": 0.0,
+      "citation_accuracy": 0.0,
+      "answer_correctness": 0.12,
+      "fact_accuracy": 0.1,
+      "multi_hop_accuracy": 0.2,
+      "refusal_accuracy": 0.0,
+      "answerable_false_refusal": -1.0,
+      "refusal_false_positive": 0.0,
+      "p50_ms": 7034.23,
+      "p95_ms": 8443.57
+    }
+  ],
+  "summary": {
+    "largest_answer_gain_stage": "B0->B1",
+    "largest_answer_gain_delta": 0.08,
+    "largest_multihop_gain_stage": "B2->B3",
+    "largest_multihop_gain_delta": 0.2,
+    "best_quality_version": "B3",
+    "best_quality_answer_correctness": 0.94,
+    "lowest_p95_version": "B1",
+    "lowest_p95_ms": 3192.82
+  }
+}
