@@ -1,0 +1,15 @@
+run_name: b2_deepseek
+experiment:
+  label: B2
+  name: hybrid_rrf_top5_deepseek
+  chunking: semantic_title_paragraph_overlap_64
+  retrieval: bge_m3_bm25_rrf_top5
+  reranker: none
+backend: hybrid
+collection: bge_m3_semantic
+gold_match: unit
+candidate_k: 20
+rrf_k: 60
+mode: deepseek
+judge: deepseek
+top_k: 5

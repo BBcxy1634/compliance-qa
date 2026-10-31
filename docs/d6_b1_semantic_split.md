@@ -86,7 +86,7 @@ P50 和 P95 各下降约 51 至 53 ms，但当前只运行了一次评测，系�
 - `eval/configs/b1.yaml`：B1 实验配置。
 - `eval/results/b1/summary.json`：B1 指标、配置和输入哈希。
 - `eval/results/b1/summary.csv`：B1 指标表。
-- `eval/results/baseline_table.csv`：B0 与 B1 的自动差值和对比表。
+- `eval/results/baseline_table.csv`：B0-B2 的自动差值和对比表。
 - `eval/results/baseline_table.json`：同一对比表的结构化版本。
 - `chroma_db/`：本地 collection `bge_m3_semantic`，271 条向量，不提交 Git。
 

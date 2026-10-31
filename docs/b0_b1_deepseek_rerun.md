@@ -91,6 +91,6 @@ P95 延迟仍高于 3 秒目标。B0 为 3446.15 ms，B1 为 3192.82 ms。当前
 
 - `eval/results/b0/`、`eval/results/b1/`：抽取出式诊断版本，保留用于解释回答层瓶颈。
 - `eval/results/b0_deepseek/`、`eval/results/b1_deepseek/`：B0/B1 正式版本。
-- `eval/results/baseline_table.csv`：当前正式 B0/B1 对比表。
+- `eval/results/baseline_table.csv`：当前正式 B0-B2 对比表。
 
 B2/B3 后续必须使用相同 DeepSeek 生成 Prompt 和判题口径，才能与这两组结果公平比较。

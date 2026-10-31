@@ -55,6 +55,8 @@ STOPWORDS = {
     "what",
     "how",
 }
+DEFAULT_HYBRID_CANDIDATE_K = 20
+DEFAULT_RRF_K = 60
 
 
 def tokenize(text: str) -> list[str]:
@@ -116,6 +118,49 @@ class BM25Retriever:
                 continue
             hits.append(SearchHit(chunk=self.chunks[index], score=float(score)))
         return hits
+
+
+class HybridRetriever:
+    """Fuse dense and lexical rankings with reciprocal rank fusion."""
+
+    def __init__(
+        self,
+        vector_retriever: BGEVectorRetriever,
+        bm25_retriever: BM25Retriever,
+        *,
+        candidate_k: int = DEFAULT_HYBRID_CANDIDATE_K,
+        rrf_k: int = DEFAULT_RRF_K,
+    ) -> None:
+        if candidate_k < 1:
+            raise ValueError("candidate_k must be positive")
+        if rrf_k < 1:
+            raise ValueError("rrf_k must be positive")
+        self.vector_retriever = vector_retriever
+        self.bm25_retriever = bm25_retriever
+        self.candidate_k = candidate_k
+        self.rrf_k = rrf_k
+
+    def search(self, query: str, top_k: int = 5) -> list[SearchHit]:
+        vector_hits = self.vector_retriever.search(query, top_k=self.candidate_k)
+        bm25_hits = self.bm25_retriever.search(query, top_k=self.candidate_k)
+        scores: dict[str, float] = {}
+        chunks: dict[str, dict[str, Any]] = {}
+
+        for hits in (vector_hits, bm25_hits):
+            for rank, hit in enumerate(hits, 1):
+                chunk_id = hit.chunk.get("chunk_id")
+                if not chunk_id:
+                    continue
+                chunks.setdefault(chunk_id, hit.chunk)
+                scores[chunk_id] = scores.get(chunk_id, 0.0) + 1.0 / (
+                    self.rrf_k + rank
+                )
+
+        ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        return [
+            SearchHit(chunk=chunks[chunk_id], score=score)
+            for chunk_id, score in ranked[:top_k]
+        ]
 
 
 def _chroma_metadata(chunk: dict[str, Any]) -> dict[str, str | int]:

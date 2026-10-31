@@ -381,11 +381,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--questions", type=Path, default=QUESTIONS_PATH)
     parser.add_argument("--chunks", type=Path, default=CHUNKS_PATH)
     parser.add_argument("--run-name")
-    parser.add_argument("--backend", choices=("bm25", "bge_m3"))
+    parser.add_argument("--backend", choices=("bm25", "bge_m3", "hybrid"))
     parser.add_argument("--collection")
     parser.add_argument("--mode", choices=("extractive", "deepseek"))
     parser.add_argument("--judge", choices=("none", "deepseek"))
     parser.add_argument("--top-k", type=int)
+    parser.add_argument("--candidate-k", type=int)
+    parser.add_argument("--rrf-k", type=int)
     parser.add_argument("--gold-match", choices=("exact", "unit"))
     parser.add_argument("--limit", type=int)
     parser.add_argument("--labels", type=Path)
@@ -416,12 +418,20 @@ def main() -> None:
     top_k = args.top_k or int(config.get("top_k", 5))
     collection = args.collection or config.get("collection", "bge_m3_semantic")
     gold_match = args.gold_match or config.get("gold_match", "exact")
+    candidate_k = args.candidate_k or int(config.get("candidate_k", 20))
+    rrf_k = args.rrf_k or int(config.get("rrf_k", 60))
 
     questions = load_jsonl(questions_path)
     if args.limit:
         questions = questions[: args.limit]
     manual_labels = load_manual_labels(labels_path)
-    retriever = create_retriever(backend, chunks_path, collection)
+    retriever = create_retriever(
+        backend,
+        chunks_path,
+        collection,
+        candidate_k=candidate_k,
+        rrf_k=rrf_k,
+    )
     judge = DeepSeekJudge() if judge_mode == "deepseek" else None
 
     run_dir = RESULTS_DIR / run_name
@@ -513,6 +523,8 @@ def main() -> None:
             "top_k": top_k,
             "collection": collection,
             "gold_match": gold_match,
+            "candidate_k": candidate_k,
+            "rrf_k": rrf_k,
             "limit": args.limit,
             "questions": str(questions_path.relative_to(ROOT)),
             "chunks": str(chunks_path.relative_to(ROOT)),
