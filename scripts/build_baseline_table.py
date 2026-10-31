@@ -26,8 +26,11 @@ def summary_row(label: str, summary_path: Path) -> dict[str, Any]:
         "hit_at_5": metrics["hit_at_5"],
         "gold_recall_at_5": metrics["gold_chunk_recall_at_5"],
         "citation_accuracy": metrics["citation_accuracy"],
+        "citation_coverage": metrics["citation_coverage"],
         "answer_correctness": metrics["answer_correctness"],
         "refusal_accuracy": metrics["refusal_accuracy"],
+        "answerable_false_refusal": metrics["answerable_false_refusal"],
+        "refusal_false_positive": metrics["refusal_false_positive"],
         "p50_ms": metrics["latency_ms"]["p50_all"],
         "p95_ms": metrics["latency_ms"]["p95_all"],
     }
@@ -41,6 +44,34 @@ def parse_run(value: str) -> tuple[str, Path]:
     if not path.is_absolute():
         path = ROOT / path
     return label, path
+
+
+def add_deltas(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not rows:
+        return rows
+    by_version = {row["version"]: row for row in rows}
+    baseline = by_version.get("B0")
+    if baseline is None:
+        return rows
+    metric_fields = (
+        "hit_at_5",
+        "gold_recall_at_5",
+        "citation_accuracy",
+        "citation_coverage",
+        "answer_correctness",
+        "refusal_accuracy",
+        "answerable_false_refusal",
+        "refusal_false_positive",
+        "p50_ms",
+        "p95_ms",
+    )
+    for row in rows:
+        for field in metric_fields:
+            row[f"delta_{field}_vs_b0"] = round(
+                float(row[field]) - float(baseline[field]),
+                4,
+            )
+    return rows
 
 
 def main() -> None:
@@ -66,6 +97,7 @@ def main() -> None:
 
     rows = [summary_row(label, path) for label, path in args.run]
     rows.sort(key=lambda row: row["version"])
+    rows = add_deltas(rows)
     fieldnames = list(rows[0])
     args.csv.parent.mkdir(parents=True, exist_ok=True)
     with args.csv.open("w", encoding="utf-8-sig", newline="") as handle:

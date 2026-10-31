@@ -1,5 +1,6 @@
 """Metric tests for the D4 evaluator."""
 
+from scripts.build_baseline_table import add_deltas
 from src.evaluate import compute_metrics, gold_match_key, parse_bool, percentile
 
 
@@ -66,3 +67,37 @@ def test_unit_match_maps_strategy_specific_chunks() -> None:
     assert gold_match_key("source#p01#c01", "exact") == "source#p01#c01"
     assert gold_match_key("source#p01#c01", "unit") == "source#p01"
     assert gold_match_key("source#p01#c99", "unit") == "source#p01"
+
+
+def test_baseline_delta_uses_b0() -> None:
+    rows = [
+        {
+            "version": "B0",
+            "hit_at_5": 0.8,
+            "gold_recall_at_5": 0.7,
+            "citation_accuracy": 0.75,
+            "citation_coverage": 0.8,
+            "answer_correctness": 0.5,
+            "refusal_accuracy": 0.9,
+            "answerable_false_refusal": 5,
+            "refusal_false_positive": 1,
+            "p50_ms": 100.0,
+            "p95_ms": 200.0,
+        },
+        {
+            "version": "B1",
+            "hit_at_5": 0.9,
+            "gold_recall_at_5": 0.8,
+            "citation_accuracy": 0.85,
+            "citation_coverage": 0.9,
+            "answer_correctness": 0.6,
+            "refusal_accuracy": 1.0,
+            "answerable_false_refusal": 4,
+            "refusal_false_positive": 0,
+            "p50_ms": 110.0,
+            "p95_ms": 220.0,
+        },
+    ]
+    result = add_deltas(rows)
+    assert result[1]["delta_hit_at_5_vs_b0"] == 0.1
+    assert result[1]["delta_p95_ms_vs_b0"] == 20.0

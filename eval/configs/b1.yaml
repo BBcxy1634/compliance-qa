@@ -1,0 +1,13 @@
+run_name: b1
+experiment:
+  label: B1
+  name: semantic_split_vector_baseline
+  chunking: semantic_title_paragraph_overlap_64
+  retrieval: bge_m3_vector_top5
+  reranker: none
+backend: bge_m3
+collection: bge_m3_semantic
+gold_match: unit
+mode: extractive
+judge: deepseek
+top_k: 5

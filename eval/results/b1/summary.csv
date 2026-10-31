@@ -1,0 +1,9 @@
+﻿metric,value
+Hit@5,1.0
+citation_accuracy,1.0
+answer_correctness,0.3
+refusal_accuracy,1.0
+gold_unit_recall@5,0.9767
+citation_coverage,0.92
+P50_latency_ms,150.51
+P95_latency_ms,179.99
