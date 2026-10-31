@@ -37,6 +37,7 @@ body {
 }
 
 .gradio-container {
+  width: 100% !important;
   max-width: 1180px !important;
   margin: 0 auto !important;
   padding: 22px 24px 42px !important;
@@ -117,6 +118,16 @@ body {
 
 .example-button {
   font-size: 13px !important;
+}
+
+#example-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#example-grid > * {
+  min-width: 0;
 }
 
 .mode-hint {
@@ -275,6 +286,9 @@ body {
   #ask-button {
     width: 100%;
   }
+  #example-grid {
+    grid-template-columns: 1fr;
+  }
 }
 """
 
@@ -349,7 +363,7 @@ def build_demo(engine: DemoEngine) -> gr.Blocks:
                     "high",
                 ),
             ]
-            with gr.Row():
+            with gr.Row(elem_id="example-grid"):
                 for label, value, example_mode in example_specs:
                     button = gr.Button(
                         label,

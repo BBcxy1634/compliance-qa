@@ -1,6 +1,6 @@
 """Tests for Gradio demo helpers."""
 
-from app import build_demo
+from app import CSS, build_demo
 from src.demo import (
     DemoEngine,
     format_answer_html,
@@ -86,3 +86,9 @@ def test_refusal_hides_citations_and_reports_zero() -> None:
 def test_gradio_page_builds_without_loading_models() -> None:
     demo = build_demo(DemoEngine())
     assert demo is not None
+
+
+def test_demo_keeps_stable_desktop_width_and_example_grid() -> None:
+    assert "width: 100% !important;" in CSS
+    assert "max-width: 1180px !important;" in CSS
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in CSS
