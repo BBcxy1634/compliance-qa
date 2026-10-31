@@ -24,13 +24,10 @@ DEFAULT_CHUNKS_PATH = PROCESSED_DIR / "chunks.jsonl"
 
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
 MODEL_CACHE_DIR = HF_HOME / "hub" / f"models--{EMBEDDING_MODEL.replace('/', '--')}"
-if MODEL_CACHE_DIR.exists():
-    os.environ.setdefault("HF_HUB_OFFLINE", "1")
-    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
-
 EMBEDDING_MAX_SEQ_LENGTH = int(os.getenv("EMBEDDING_MAX_SEQ_LENGTH", "1024"))
 RERANKER_MODEL = os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-v2-m3")
 RERANKER_MAX_LENGTH = int(os.getenv("RERANKER_MAX_LENGTH", "512"))
+TORCH_DEVICE = os.getenv("TORCH_DEVICE", "auto")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
@@ -67,3 +64,22 @@ def resolve_reranker_model(model_name: str = RERANKER_MODEL) -> str:
     ref = ref_path.read_text(encoding="utf-8").strip()
     snapshot = model_cache / "snapshots" / ref
     return str(snapshot) if snapshot.exists() else model_name
+
+
+def resolve_torch_device(preference: str = TORCH_DEVICE) -> str:
+    """Resolve auto/cpu/cuda while failing clearly when CUDA is unavailable."""
+    normalized = preference.strip().lower()
+    if normalized not in {"auto", "cpu", "cuda"}:
+        raise ValueError("TORCH_DEVICE must be one of: auto, cpu, cuda")
+    if normalized == "cpu":
+        return "cpu"
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda"
+    if normalized == "cuda":
+        raise RuntimeError(
+            "TORCH_DEVICE=cuda but CUDA is not available. "
+            "Install a CUDA-enabled PyTorch build or use TORCH_DEVICE=cpu."
+        )
+    return "cpu"

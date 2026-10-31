@@ -19,6 +19,7 @@ from src.config import (
     RERANKER_MODEL,
     resolve_embedding_model,
     resolve_reranker_model,
+    resolve_torch_device,
 )
 from src.schemas import SearchHit
 
@@ -182,7 +183,7 @@ class CrossEncoderReranker:
 
         self.model = CrossEncoder(
             resolve_reranker_model(model_name),
-            device="cpu",
+            device=resolve_torch_device(),
             max_length=max_length,
         )
         self.batch_size = batch_size
@@ -271,7 +272,10 @@ def build_vector_index(
     from sentence_transformers import SentenceTransformer
 
     chunks = load_chunks(chunks_path)
-    model = SentenceTransformer(resolve_embedding_model(model_name), device="cpu")
+    model = SentenceTransformer(
+        resolve_embedding_model(model_name),
+        device=resolve_torch_device(),
+    )
     model.max_seq_length = EMBEDDING_MAX_SEQ_LENGTH
     texts = [chunk["text"] for chunk in chunks]
     embeddings = model.encode(
@@ -309,7 +313,10 @@ class BGEVectorRetriever:
         from chromadb import PersistentClient
         from sentence_transformers import SentenceTransformer
 
-        self.model = SentenceTransformer(resolve_embedding_model(model_name), device="cpu")
+        self.model = SentenceTransformer(
+            resolve_embedding_model(model_name),
+            device=resolve_torch_device(),
+        )
         self.model.max_seq_length = EMBEDDING_MAX_SEQ_LENGTH
         self.client = PersistentClient(path=str(CHROMA_DIR))
         self.collection = self.client.get_collection(collection_name)
