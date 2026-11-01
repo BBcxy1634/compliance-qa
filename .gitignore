@@ -12,6 +12,7 @@ pytest-cache-files-*/
 .ruff_cache/
 htmlcov/
 .coverage
+dist/
 
 chroma_db/
 data/raw/private/
