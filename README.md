@@ -53,7 +53,7 @@ B3 是可选高质量模式：混合检索 Top 8 后使用 `BAAI/bge-reranker-v2
 
 ## 快速开始
 
-先安装 Python 3.10+，并把 `.env.example` 复制为 `.env`，填写 DeepSeek Key。之后在项目根目录执行三条命令：
+先安装 Python 3.12+，并把 `.env.example` 复制为 `.env`，填写 DeepSeek Key。之后在项目根目录执行三条命令：
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -158,3 +158,11 @@ compliance-qa/
 - q032、q049 仍存在精确 chunk 覆盖不足。
 - 自动判题结果尚未完成人工复核。
 - Demo 为单轮问答，不保存会话历史；B3 首次加载在 CPU 上较慢。
+
+## 许可证与数据权利
+
+项目源代码和原创文档采用 [MIT License](LICENSE)。
+
+`data/raw/ppt` 中的 7 份 PPT 是项目维护者确认可用于本项目的材料，随仓库提供，但不自动纳入 MIT 授权范围。PPT 中可能包含的第三方商标、图片、字体或引用仍归原权利人所有。
+
+Amazon、eBay 官方网页，海关和商务公告及其 PDF 不提交到仓库；使用时须遵守原发布方的版权和使用条款。详细说明见 [NOTICE.md](NOTICE.md)。

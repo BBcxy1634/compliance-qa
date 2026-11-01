@@ -58,8 +58,9 @@ BGE-M3 语义检索或 BM25 关键词检索
 
 激活环境：
 
+在克隆后的项目根目录执行：
+
 ```powershell
-Set-Location 'D:\大学学习\跨境卖家合规问答助手项目\compliance-qa'
 .\.venv\Scripts\Activate.ps1
 ```
 

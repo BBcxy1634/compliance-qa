@@ -42,8 +42,8 @@ def main() -> None:
     warnings: list[str] = []
     modules: dict[str, str] = {}
 
-    if sys.version_info < (3, 10):
-        errors.append("Python 3.10 or newer is required")
+    if sys.version_info < (3, 12):
+        errors.append("Python 3.12 or newer is required")
 
     for name in REQUIRED_MODULES:
         try:

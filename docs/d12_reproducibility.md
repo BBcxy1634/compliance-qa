@@ -3,16 +3,17 @@
 ## 环境要求
 
 - Windows PowerShell
-- Python 3.10 或更高版本
-- 项目路径：`D:\大学学习\跨境卖家合规问答助手项目\compliance-qa`
+- Python 3.12 或更高版本，推荐 Python 3.13
+- 克隆后的 `compliance-qa` 项目根目录
 - DeepSeek API Key
 - CPU 模式建议至少 8 GB 可用内存
 - B3 GPU 模式建议至少 8 GB 显存
 
 ## 首次配置
 
+在克隆后的项目根目录执行：
+
 ```powershell
-Set-Location 'D:\大学学习\跨境卖家合规问答助手项目\compliance-qa'
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt

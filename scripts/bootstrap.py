@@ -60,8 +60,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    if sys.version_info < (3, 10):
-        raise RuntimeError("Python 3.10 or newer is required")
+    if sys.version_info < (3, 12):
+        raise RuntimeError("Python 3.12 or newer is required")
 
     html_count = count_files(ROOT / "data" / "raw" / "html", "*.md")
     pdf_count = count_files(ROOT / "data" / "raw" / "pdf", "*.pdf")

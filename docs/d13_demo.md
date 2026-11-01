@@ -22,7 +22,6 @@ B3 是质量上限实验和可选高质量模式，**不是最终默认配置**�
 先确认 `.env` 已配置 `DEEPSEEK_API_KEY`，然后在项目根目录执行：
 
 ```powershell
-Set-Location 'D:\大学学习\跨境卖家合规问答助手项目\compliance-qa'
 .\.venv\Scripts\python.exe app.py --port 7860
 ```
 
