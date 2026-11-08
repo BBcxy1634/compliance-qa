@@ -1,0 +1,56 @@
+# Agentic Compliance Copilot v2 Review Checklist
+
+## Before Coding
+
+- [ ] Read `AGENTS.md` and the three V2 planning documents.
+- [ ] Run `git status --short --branch`.
+- [ ] Confirm the current implementation phase.
+- [ ] State assumptions and files expected to change.
+- [ ] Do not implement future phases.
+
+## Compatibility
+
+- [ ] B1 Fast remains the default.
+- [ ] B3 remains optional.
+- [ ] Refusal still returns zero citations.
+- [ ] Citation IDs come from the actual answer body.
+- [ ] Existing CLI entry points still work.
+- [ ] Existing Gradio demo still works or is intentionally migrated.
+- [ ] Evaluation behavior remains comparable.
+
+## Implementation Quality
+
+- [ ] The change uses existing modules and patterns.
+- [ ] No speculative abstraction was added.
+- [ ] Tools and graph transitions are bounded.
+- [ ] Errors have predictable, testable behavior.
+- [ ] No secrets appear in code, logs, fixtures, or documents.
+- [ ] No raw official sources, vector databases, or private data are committed.
+
+## Tests
+
+- [ ] New behavior has focused tests.
+- [ ] Invalid input is tested.
+- [ ] Refusal behavior is tested when relevant.
+- [ ] Streaming behavior is tested when relevant.
+- [ ] Tool failure is tested when relevant.
+- [ ] `python -m pytest -q` passes.
+- [ ] `python scripts/check_environment.py --require-data` passes when data is
+  needed.
+
+## Documentation
+
+- [ ] API, graph, or tool contracts are documented.
+- [ ] `PROJECT_STATE.md` is updated.
+- [ ] `IMPLEMENTATION_PLAN.md` status is updated if a phase is complete.
+- [ ] Failures and limitations are recorded honestly.
+- [ ] Metrics include the command or source used to generate them.
+
+## Git
+
+- [ ] One phase maps to one coherent commit.
+- [ ] No unrelated changes are included.
+- [ ] Worktree is clean after the commit.
+- [ ] Push, force-push, release publication, and repository visibility changes
+  require explicit user approval.
+
