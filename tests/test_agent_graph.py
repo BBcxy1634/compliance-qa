@@ -89,6 +89,7 @@ def _generated(
         "mode": "deepseek",
         "model": "stub-model",
         "usage": {"total_tokens": 8},
+        "prompt_version": "deepseek-compliance-v2.1",
     }
 
 
@@ -163,6 +164,10 @@ def test_simple_fact_uses_fast_route_and_records_decisions(
         "search_official_policy_sources"
     )
     assert result["tool_calls"][0]["ok"] is True
+    assert result["evidence_sufficient"] is True
+    assert result["evidence_reason"] == "sufficient"
+    assert result["top_k"] == 5
+    assert result["prompt_version"] == "deepseek-compliance-v2.1"
 
 
 def test_multi_hop_question_is_split_without_reranking(

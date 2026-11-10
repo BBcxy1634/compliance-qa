@@ -658,6 +658,7 @@ def _display_hits(state: AgentState) -> list[dict[str, Any]]:
         {
             "score": round(float(item["score"]), 4),
             "chunk_id": item["chunk"].get("chunk_id"),
+            "source_id": item["chunk"].get("source_id"),
             "title": item["chunk"].get("title"),
             "source": item["chunk"].get("source"),
             "page_label": item["chunk"].get("page_label"),
@@ -705,11 +706,22 @@ def _finalize_state(
             "total_ms": round(total_ms, 2),
             "hits": _display_hits(state),
             "model": state.get("model"),
+            "prompt_version": result.get("prompt_version"),
             "usage": dict(state.get("usage") or {}),
             "route": state["route"]["route"],
             "route_decision": dict(state["route"]),
             "route_trace": list(state.get("route_trace", [])),
             "tool_calls": list(state.get("tool_calls", [])),
+            "evidence_sufficient": bool(
+                state.get("evidence_sufficient", False)
+            ),
+            "evidence_reason": str(
+                state.get("evidence_reason", "not_evaluated")
+            ),
+            "sufficient_source_count": int(
+                state.get("sufficient_source_count", 0)
+            ),
+            "top_k": deps.top_k,
         }
     )
     return result

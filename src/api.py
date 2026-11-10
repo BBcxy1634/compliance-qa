@@ -16,6 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.demo import DemoEngine
 from src.generate import ModelGenerationError, filter_used_citations
+from src.observability import TraceStore
 from src.tools import ToolExecutionError
 
 
@@ -196,6 +197,7 @@ def _stream_response(
     request: AnswerRequest,
     request_id: str,
     session_id: str | None,
+    trace_store: TraceStore | None,
 ) -> Iterator[str]:
     yield _sse(
         "start",
@@ -212,6 +214,8 @@ def _stream_response(
             data = dict(item.get("data") or {})
             if event == "done":
                 done = _answer_response(request_id, request.mode, data)
+                if trace_store is not None:
+                    trace_store.record_result(request_id, data)
                 yield _sse(
                     "done",
                     done.model_dump(
@@ -227,6 +231,8 @@ def _stream_response(
             raise RuntimeError("Streaming orchestration emitted an invalid event.")
         raise RuntimeError("Streaming orchestration ended without a done event.")
     except Exception as exc:
+        if trace_store is not None:
+            trace_store.record_error(request_id, exc)
         _status_code, code, message = _public_error(exc)
         yield _sse(
             "error",
@@ -238,7 +244,10 @@ def _stream_response(
         )
 
 
-def create_app(engine: AnswerEngine) -> FastAPI:
+def create_app(
+    engine: AnswerEngine,
+    trace_store: TraceStore | None = None,
+) -> FastAPI:
     app = FastAPI(
         title="Compliance RAG API",
         version="0.1.0",
@@ -292,7 +301,11 @@ def create_app(engine: AnswerEngine) -> FastAPI:
             session_id = _normalize_session_id(x_session_id)
             result = _ask_engine(engine, request, session_id)
         except Exception as exc:
+            if trace_store is not None:
+                trace_store.record_error(request_id, exc)
             _raise_http_error(exc)
+        if trace_store is not None:
+            trace_store.record_result(request_id, result)
         return _answer_response(request_id, request.mode, result)
 
     @app.post(
@@ -319,9 +332,17 @@ def create_app(engine: AnswerEngine) -> FastAPI:
         try:
             session_id = _normalize_session_id(x_session_id)
         except Exception as exc:
+            if trace_store is not None:
+                trace_store.record_error(request_id, exc)
             _raise_http_error(exc)
         return StreamingResponse(
-            _stream_response(engine, request, request_id, session_id),
+            _stream_response(
+                engine,
+                request,
+                request_id,
+                session_id,
+                trace_store,
+            ),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -332,4 +353,7 @@ def create_app(engine: AnswerEngine) -> FastAPI:
     return app
 
 
-app = create_app(DemoEngine())
+app = create_app(
+    DemoEngine(),
+    trace_store=TraceStore.from_environment(),
+)

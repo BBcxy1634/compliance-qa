@@ -25,6 +25,8 @@
 - [ ] Tools and graph transitions are bounded.
 - [ ] Errors have predictable, testable behavior.
 - [ ] No secrets appear in code, logs, fixtures, or documents.
+- [ ] Traces contain neither private content nor credentials.
+- [ ] Trace write failure cannot break API or SSE responses.
 - [ ] No raw official sources, vector databases, or private data are committed.
 
 ## Tests
@@ -45,6 +47,7 @@
 - [ ] `IMPLEMENTATION_PLAN.md` status is updated if a phase is complete.
 - [ ] Failures and limitations are recorded honestly.
 - [ ] Metrics include the command or source used to generate them.
+- [ ] Draft questions and labels are not represented as human-approved.
 
 ## Git
 

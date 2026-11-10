@@ -17,6 +17,8 @@ from src.schemas import SearchHit
 
 
 REFUSAL_TEXT = "文档中未找到足够依据，暂时无法回答这个问题。"
+DEEPSEEK_PROMPT_VERSION = "deepseek-compliance-v2.1"
+EXTRACTIVE_PROMPT_VERSION = "extractive-template-v1"
 CITATION_PATTERN = re.compile(r"\[C(\d+)\]")
 HEADING_ONLY_LINES = {
     "What is the policy?",
@@ -170,6 +172,7 @@ def extractive_answer(
             "citations": [],
             "mode": "extractive",
             "refused": True,
+            "prompt_version": EXTRACTIVE_PROMPT_VERSION,
         }
 
     selected: list[tuple[str, int, dict[str, Any]]] = []
@@ -214,6 +217,7 @@ def extractive_answer(
         "citations": citations,
         "mode": "extractive",
         "refused": False,
+        "prompt_version": EXTRACTIVE_PROMPT_VERSION,
     }
 
 
@@ -333,6 +337,7 @@ def _deepseek_result(
         "refused": refused,
         "model": model,
         "usage": usage,
+        "prompt_version": DEEPSEEK_PROMPT_VERSION,
     }
 
 

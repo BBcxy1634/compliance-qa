@@ -64,6 +64,12 @@ always has `refused: true` and an empty `citations` array.
 The graph records route decisions internally. They do not add fields to the
 public response model.
 
+When `TRACE_ENABLED=true`, the API and SSE handlers write sanitized local JSONL
+traces to `TRACE_DIR`. Trace payloads do not include the question, complete
+answer, session ID, prompt, API key, or private chunk text. Trace write failure
+does not alter the HTTP response or SSE event sequence. See
+`docs/agentic_v2/OBSERVABILITY.md`.
+
 ## SSE Events
 
 Each event uses standard SSE framing:

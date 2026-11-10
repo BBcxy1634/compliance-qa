@@ -106,3 +106,44 @@ Reason:
 
 V2 adds more model and tool integrations, increasing accidental exposure risk.
 
+## ADR-010: Local JSONL Observability for Phase 4
+
+Decision:
+
+Use a dependency-free local JSONL trace store for Phase 4 instead of Langfuse
+or another hosted collector.
+
+Reason:
+
+The project needs request, retrieval, tool, token, latency, and error data
+without adding a service or exporting potentially private content. The trace
+store uses field allowlists and best-effort writes so diagnostics cannot break
+the API or SSE response path.
+
+## ADR-011: Preserve Existing Metrics and Add a Separate Agentic Layer
+
+Decision:
+
+Keep the existing `metrics` object and formulas unchanged. Emit new routing,
+tool, multi-step, and evidence metrics under `agentic_metrics`.
+
+Reason:
+
+Historical B0-B3 and B1 Fast comparisons must remain meaningful. A separate
+metric object also makes the provenance and limitations of draft agentic labels
+explicit.
+
+## ADR-012: Draft Labels Without Fabricated Human Review
+
+Decision:
+
+Mark all newly created Phase 4 questions and all new agentic annotations as
+`draft`. Independent human review is treated as exempted by the project owner,
+not as completed.
+
+Reason:
+
+Automated or model-generated judgments are not a substitute for human review.
+The evaluation can still exercise the software and report provisional metrics
+without claiming unsupported review evidence.
+

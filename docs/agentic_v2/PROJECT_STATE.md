@@ -10,8 +10,8 @@ Last updated: 2026-11-10
 | Current branch | `feat/agentic-v2` |
 | Base release | `v1.0.0` |
 | Base commit | `1ea2f4b9161b921d126466f86e69782bec9b34b1` |
-| Current V2 phase | Phase 3: tools and short-term conversation complete |
-| V2 code status | Phase 3 complete |
+| Current V2 phase | Phase 4: evaluation and observability complete |
+| V2 code status | Phase 4 complete |
 | Current release state | v1.0.0 remains the released version |
 
 ## V2 Goal
@@ -89,11 +89,13 @@ Important existing modules:
 | `src/rag.py` | CLI plus graph adapters for synchronous and streaming answers |
 | `src/tools.py` | typed tool runtime, snapshot catalog, bounded retries |
 | `src/conversation.py` | bounded process-local short-term session context |
+| `src/observability.py` | best-effort local JSONL traces with payload allowlists |
 | `app.py` | Gradio demo |
 | `src/demo.py` | demo modes, HTML rendering, citation filtering |
 | `src/api.py` | FastAPI models, synchronous answer endpoint, and SSE streaming |
-| `evaluate.py`, `src/evaluate.py` | evaluation entry point and metrics |
+| `evaluate.py`, `src/evaluate.py` | existing metrics plus agentic metrics and local traces |
 | `eval/questions.jsonl` | frozen 60-question evaluation set |
+| `eval/agentic_v2/questions.jsonl` | 150-question Phase 4 draft evaluation set |
 | `bench.py`, `src/benchmark.py` | latency and cost benchmark |
 | `scripts/bootstrap.py` | data, chunk, vector, and environment preparation |
 
@@ -196,15 +198,56 @@ Results:
 
 - No historical policy snapshot corpus, so real cross-version comparison is not
   yet available.
-- No Langfuse or equivalent trace.
-- No routing accuracy, tool success, or evidence sufficiency metrics.
+- No hosted trace UI; Phase 4 intentionally uses local JSONL traces.
+- New Phase 4 questions and agentic labels are `draft`; independent human
+  review was not executed and was exempted by the project owner.
+- The full paid DeepSeek evaluation has not been run in Phase 4.
 - No Docker-based service composition.
 - No GitHub Actions workflow.
 - Current Gradio app is local and single-request oriented.
 
+## Phase 4 Verification
+
+Phase 4 adds:
+
+- unchanged original 60 questions and existing metric definitions
+- a 150-question dated evaluation file with 90 new draft questions
+- route, tool selection, tool success, multi-step completion, and evidence
+  sufficiency metrics
+- local `traces.jsonl`, `errors.jsonl`, `tool_failures.jsonl`, and trace summary
+  metadata
+- exact gold evidence validation for all 150 records
+
+Validation performed on 2026-11-10:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe scripts/validate_eval.py
+.\.venv\Scripts\python.exe scripts/validate_agentic_eval.py
+.\.venv\Scripts\python.exe scripts/validate_sources.py
+.\.venv\Scripts\python.exe scripts/check_environment.py --require-data
+```
+
+Results:
+
+- 89 tests passed.
+- Original evaluation set: 60 questions, 40 fact, 10 multi-hop, 10 refusal.
+- Agentic evaluation set: 150 questions, 70 fact, 60 multi-hop, 20 refusal.
+- Expected routes: 68 simple fact, 47 high risk, 35 multi-hop.
+- Deterministic draft-label route accuracy: 136/150 (`0.9067`).
+- All 24 official source records and Phase 4 evidence quotes validated.
+- Environment check passed with Python 3.13.2 and both Chroma collections.
+- The full paid DeepSeek evaluation was intentionally not run.
+
+Public API and SSE responses remain unchanged. Trace writing is opt-in for the
+API and best effort: a write failure does not affect the answer path.
+
+The detailed contracts are in `docs/agentic_v2/EVALUATION.md` and
+`docs/agentic_v2/OBSERVABILITY.md`.
+
 ## Current Phase and Next Task
 
-Phase 3 is complete. The FastAPI application exposes:
+Phase 4 is complete. The FastAPI application exposes:
 
 - `GET /health`
 - `POST /api/v1/answer`
@@ -216,9 +259,8 @@ incremental token deltas. The `done` event contains only citations whose IDs
 occur in the complete answer body. Refusals always return `refused=true` and no
 citations.
 
-The next task is **Phase 4: Evaluation and Observability**, which is not
-started. Do not change evaluation metrics or add observability infrastructure
-until that phase explicitly starts.
+The next task is **Phase 5: Packaging, CI, and Release**, which is not started.
+Do not implement Docker, CI, or release work before that phase starts.
 
 The API contract is documented in `docs/agentic_v2/API.md`. The graph contract
 is documented in `docs/agentic_v2/GRAPH.md`. Tool and session contracts are

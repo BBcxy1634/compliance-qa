@@ -104,6 +104,7 @@ optional mode; the graph does not create a reranker itself.
 | `generation_ms` | Generation time |
 | `verification_ms` | Citation-verification time |
 | `model` | Model reported by the existing generator |
+| `prompt_version` | Version identifier for the active generation prompt |
 | `usage` | Token usage reported by the existing generator |
 
 `SearchHit` values are converted to plain dictionaries inside the graph.
@@ -142,6 +143,10 @@ For explicit follow-up patterns such as `那欧盟呢`, the last user question i
 also prepended to the retrieval query. Current retrieval hits remain the only
 citation source.
 
+The finalized internal result also exposes `top_k`, `evidence_sufficient`,
+`evidence_reason`, and `sufficient_source_count` for evaluation and local
+tracing. The public API response model remains unchanged.
+
 ## Tool Calls
 
 The core search tool wraps the existing retriever and returns the same
@@ -167,6 +172,10 @@ SSE events are emitted from graph nodes through LangGraph custom streaming:
 
 The FastAPI layer remains responsible for `start` and sanitized `error` events.
 The external event names, payload fields, and order remain the Phase 1 contract.
+
+When local tracing is enabled, the FastAPI boundary records the completed graph
+result or sanitized failure after the existing event/response handling path is
+known. Trace failure is ignored by the user-facing request.
 
 ## Errors
 

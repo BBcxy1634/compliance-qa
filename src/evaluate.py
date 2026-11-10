@@ -24,6 +24,7 @@ from src.config import (
     ROOT,
 )
 from src.generate import REFUSAL_TEXT
+from src.observability import TraceStore, public_error_code
 from src.rag import answer_with_retriever, create_retriever
 
 
@@ -308,6 +309,179 @@ def compute_metrics(
     }
 
 
+def _row_source_ids(row: dict[str, Any]) -> set[str]:
+    return {
+        str(chunk_id).split("#", 1)[0]
+        for chunk_id in row.get("gold_chunks", [])
+        if str(chunk_id)
+    }
+
+
+def _citation_source_ids(row: dict[str, Any]) -> set[str]:
+    source_ids: set[str] = set()
+    for citation in row.get("citations", []):
+        if not isinstance(citation, dict):
+            continue
+        source_id = str(citation.get("source_id", "")).strip()
+        if not source_id:
+            source_id = str(citation.get("chunk_id", "")).split("#", 1)[0]
+        if source_id:
+            source_ids.add(source_id)
+    return source_ids
+
+
+def compute_agentic_metrics(
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    route_rows = [
+        row for row in results if row.get("expected_route") is not None
+    ]
+    route_correct = sum(
+        row.get("route") == row["expected_route"] for row in route_rows
+    )
+    route_by_expected: dict[str, dict[str, Any]] = {}
+    for expected in ("simple_fact", "multi_hop", "high_risk"):
+        group = [
+            row for row in route_rows if row["expected_route"] == expected
+        ]
+        correct = sum(row.get("route") == expected for row in group)
+        route_by_expected[expected] = {
+            "count": len(group),
+            "correct": correct,
+            "accuracy": round(correct / len(group), 4) if group else 0.0,
+        }
+    confusion: dict[str, dict[str, int]] = {}
+    for row in route_rows:
+        expected = str(row["expected_route"])
+        actual = str(row.get("route") or "missing")
+        confusion.setdefault(expected, {})
+        confusion[expected][actual] = confusion[expected].get(actual, 0) + 1
+
+    selection_rows = [
+        row
+        for row in results
+        if isinstance(row.get("required_tools"), list)
+    ]
+    selection_correct = 0
+    for row in selection_rows:
+        invoked = {
+            str(call.get("tool", ""))
+            for call in row.get("tool_calls", [])
+            if isinstance(call, dict)
+        }
+        required = {str(tool) for tool in row["required_tools"]}
+        if required.issubset(invoked):
+            selection_correct += 1
+
+    tool_calls = [
+        call
+        for row in results
+        for call in row.get("tool_calls", [])
+        if isinstance(call, dict)
+    ]
+    tool_success_count = sum(bool(call.get("ok")) for call in tool_calls)
+    tools_by_name: dict[str, dict[str, Any]] = {}
+    failure_codes: Counter[str] = Counter()
+    for call in tool_calls:
+        name = str(call.get("tool", ""))
+        bucket = tools_by_name.setdefault(
+            name,
+            {"calls": 0, "successes": 0, "failures": 0},
+        )
+        bucket["calls"] += 1
+        if call.get("ok"):
+            bucket["successes"] += 1
+        else:
+            bucket["failures"] += 1
+            error = call.get("error")
+            code = (
+                str(error.get("code", "unknown"))
+                if isinstance(error, dict)
+                else "unknown"
+            )
+            failure_codes[code] += 1
+    for bucket in tools_by_name.values():
+        bucket["success_rate"] = (
+            round(bucket["successes"] / bucket["calls"], 4)
+            if bucket["calls"]
+            else 0.0
+        )
+
+    evidence_rows = [
+        row
+        for row in results
+        if isinstance(row.get("expected_evidence_sufficient"), bool)
+        and isinstance(row.get("evidence_sufficient"), bool)
+    ]
+    evidence_correct = sum(
+        row["evidence_sufficient"] == row["expected_evidence_sufficient"]
+        for row in evidence_rows
+    )
+
+    multi_step_rows = [
+        row
+        for row in results
+        if row.get("type") == "multi_hop"
+        and row.get("final_correct") is not None
+    ]
+    multi_step_complete = sum(
+        not bool(row.get("refused"))
+        and _row_source_ids(row).issubset(_citation_source_ids(row))
+        and bool(row.get("final_correct"))
+        for row in multi_step_rows
+    )
+
+    return {
+        "route_accuracy": {
+            "evaluated_cases": len(route_rows),
+            "correct_cases": route_correct,
+            "accuracy": round(route_correct / len(route_rows), 4)
+            if route_rows
+            else 0.0,
+            "by_expected_route": route_by_expected,
+            "confusion": confusion,
+        },
+        "tool_selection_accuracy": {
+            "evaluated_cases": len(selection_rows),
+            "correct_cases": selection_correct,
+            "accuracy": round(selection_correct / len(selection_rows), 4)
+            if selection_rows
+            else 0.0,
+            "definition": "all required_tools were invoked",
+        },
+        "tool_success_rate": {
+            "tool_calls": len(tool_calls),
+            "successful_calls": tool_success_count,
+            "success_rate": round(tool_success_count / len(tool_calls), 4)
+            if tool_calls
+            else 0.0,
+            "by_tool": dict(sorted(tools_by_name.items())),
+            "failure_codes": dict(sorted(failure_codes.items())),
+        },
+        "multi_step_completion_rate": {
+            "evaluated_cases": len(multi_step_rows),
+            "completed_cases": multi_step_complete,
+            "completion_rate": round(
+                multi_step_complete / len(multi_step_rows),
+                4,
+            )
+            if multi_step_rows
+            else 0.0,
+            "definition": (
+                "not refused, all expected source_ids cited, "
+                "and final correctness is true"
+            ),
+        },
+        "evidence_sufficiency_accuracy": {
+            "evaluated_cases": len(evidence_rows),
+            "correct_cases": evidence_correct,
+            "accuracy": round(evidence_correct / len(evidence_rows), 4)
+            if evidence_rows
+            else 0.0,
+        },
+    }
+
+
 def write_review_csv(path: Path, results: list[dict[str, Any]]) -> None:
     columns = [
         "id",
@@ -347,6 +521,7 @@ def write_summary_csv(
     path: Path,
     metrics: dict[str, Any],
     gold_match: str,
+    agentic_metrics: dict[str, Any] | None = None,
 ) -> None:
     recall_label = (
         "gold_chunk_recall@5"
@@ -363,6 +538,35 @@ def write_summary_csv(
         ("P50_latency_ms", metrics["latency_ms"]["p50_all"]),
         ("P95_latency_ms", metrics["latency_ms"]["p95_all"]),
     ]
+    if agentic_metrics is not None:
+        rows.extend(
+            [
+                (
+                    "agentic_route_accuracy",
+                    agentic_metrics["route_accuracy"]["accuracy"],
+                ),
+                (
+                    "agentic_tool_selection_accuracy",
+                    agentic_metrics["tool_selection_accuracy"]["accuracy"],
+                ),
+                (
+                    "agentic_tool_success_rate",
+                    agentic_metrics["tool_success_rate"]["success_rate"],
+                ),
+                (
+                    "agentic_multi_step_completion_rate",
+                    agentic_metrics["multi_step_completion_rate"][
+                        "completion_rate"
+                    ],
+                ),
+                (
+                    "agentic_evidence_sufficiency_accuracy",
+                    agentic_metrics["evidence_sufficiency_accuracy"][
+                        "accuracy"
+                    ],
+                ),
+            ]
+        )
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.writer(handle)
         writer.writerow(["metric", "value"])
@@ -457,18 +661,42 @@ def main() -> None:
     run_dir = RESULTS_DIR / run_name
     run_dir.mkdir(parents=True, exist_ok=True)
     results: list[dict[str, Any]] = []
+    error_summaries: list[dict[str, Any]] = []
+    trace_store = TraceStore(run_dir)
+    trace_store.reset()
     started_at = datetime.now().astimezone().isoformat(timespec="seconds")
 
     for index, question in enumerate(questions, 1):
         print(f"[{index:02d}/{len(questions):02d}] {question['id']} {question['question']}")
-        result = answer_with_retriever(
-            question["question"],
-            retriever=retriever,
-            backend=backend,
-            mode=mode,
-            top_k=top_k,
-            thinking=thinking,
-            max_tokens=max_tokens,
+        try:
+            result = answer_with_retriever(
+                question["question"],
+                retriever=retriever,
+                backend=backend,
+                mode=mode,
+                top_k=top_k,
+                thinking=thinking,
+                max_tokens=max_tokens,
+            )
+        except Exception as exc:
+            code = public_error_code(exc)
+            trace_store.record_error(
+                f"eval_{question['id']}",
+                exc,
+                case_id=str(question["id"]),
+            )
+            error_summaries.append(
+                {
+                    "id": question["id"],
+                    "error_type": type(exc).__name__,
+                    "code": code,
+                }
+            )
+            continue
+        trace_store.record_result(
+            f"eval_{question['id']}",
+            result,
+            case_id=str(question["id"]),
         )
         retrieved = result["hits"]
         retrieved_ids = [hit["chunk_id"] for hit in retrieved]
@@ -486,6 +714,7 @@ def main() -> None:
             for citation in citations
         }
         citation_found = gold_keys.intersection(cited_keys)
+        agentic = dict(question.get("agentic") or {})
 
         row: dict[str, Any] = {
             "id": question["id"],
@@ -511,6 +740,25 @@ def main() -> None:
             "total_ms": result.get("total_ms"),
             "mode": result.get("mode"),
             "backend": result.get("backend"),
+            "model": result.get("model"),
+            "prompt_version": result.get("prompt_version"),
+            "usage": dict(result.get("usage") or {}),
+            "top_k": result.get("top_k"),
+            "route": result.get("route"),
+            "route_decision": dict(result.get("route_decision") or {}),
+            "route_trace": list(result.get("route_trace") or []),
+            "tool_calls": list(result.get("tool_calls") or []),
+            "evidence_sufficient": result.get("evidence_sufficient"),
+            "evidence_reason": result.get("evidence_reason"),
+            "sufficient_source_count": result.get(
+                "sufficient_source_count"
+            ),
+            "expected_route": agentic.get("expected_route"),
+            "required_tools": list(agentic.get("required_tools") or []),
+            "expected_evidence_sufficient": agentic.get(
+                "expected_evidence_sufficient"
+            ),
+            "agentic_review_status": agentic.get("review_status"),
             "auto_correct": None,
             "auto_reason": "",
         }
@@ -529,6 +777,7 @@ def main() -> None:
         results.append(row)
 
     metrics = compute_metrics(results, manual_labels)
+    agentic_metrics = compute_agentic_metrics(results)
     summary = {
         "run_name": run_name,
         "experiment": config.get("experiment", {}),
@@ -555,6 +804,15 @@ def main() -> None:
             "chunks": str(chunks_path.relative_to(ROOT)),
         },
         "metrics": metrics,
+        "agentic_metrics": agentic_metrics,
+        "observability": trace_store.summary(),
+        "errors": error_summaries,
+        "successful_questions": len(results),
+        "failed_questions": len(error_summaries),
+        "human_review": {
+            "status": "exempted_by_project_owner",
+            "executed": False,
+        },
     }
 
     write_jsonl(run_dir / "per_question.jsonl", results)
@@ -562,7 +820,12 @@ def main() -> None:
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    write_summary_csv(run_dir / "summary.csv", metrics, gold_match)
+    write_summary_csv(
+        run_dir / "summary.csv",
+        metrics,
+        gold_match,
+        agentic_metrics,
+    )
     write_review_csv(run_dir / "review.csv", results)
     (RESULTS_DIR / "latest_run.json").write_text(
         json.dumps(

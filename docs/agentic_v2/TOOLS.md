@@ -29,6 +29,11 @@ Every invocation produces either `ToolSuccess` or `ToolFailure`. Failure
 records contain a stable code, a retryable flag, and the final attempt count.
 Internal exception text is not placed in graph state.
 
+Phase 4 evaluation records tool selection separately from execution. A tool is
+considered selected when its name appears in `tool_calls`, even if the call
+later returns a stable failure. Tool success rate is computed independently
+from those final outcomes.
+
 ## Retry Policy
 
 - The default retry ceiling is 2 total attempts.

@@ -19,6 +19,9 @@ data/raw/private/
 eval/results/*.cache
 eval/results/**/per_question.jsonl
 eval/results/**/review.csv
+eval/results/**/traces.jsonl
+eval/results/**/errors.jsonl
+eval/results/**/tool_failures.jsonl
 official_pdf_*/
 
 # Official source snapshots remain local; commit URLs and fetch scripts instead.
