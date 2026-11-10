@@ -1,5 +1,6 @@
 """Tests for Gradio demo helpers."""
 
+import src.demo as demo_module
 from app import CSS, build_demo
 from src.demo import (
     DemoEngine,
@@ -92,3 +93,26 @@ def test_demo_keeps_stable_desktop_width_and_example_grid() -> None:
     assert "width: 100% !important;" in CSS
     assert "max-width: 1180px !important;" in CSS
     assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in CSS
+
+
+def test_demo_engine_isolates_session_context(monkeypatch) -> None:
+    engine = DemoEngine()
+    contexts: list[dict] = []
+    monkeypatch.setattr(demo_module, "DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr(engine, "get_retriever", lambda _mode: object())
+
+    def fake_answer(question: str, **kwargs):
+        contexts.append(kwargs["conversation_context"])
+        return {"answer": f"answer:{question}", "refused": False}
+
+    monkeypatch.setattr(demo_module, "answer_with_retriever", fake_answer)
+
+    engine.ask("session-a-question-1", "fast", "session-a")
+    engine.ask("session-b-question", "fast", "session-b")
+    engine.ask("session-a-question-2", "fast", "session-a")
+
+    assert contexts[0]["recent_turns"] == []
+    assert contexts[1]["recent_turns"] == []
+    assert contexts[2]["recent_turns"][0]["question"] == (
+        "session-a-question-1"
+    )

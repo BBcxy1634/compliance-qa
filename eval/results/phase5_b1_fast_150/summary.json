@@ -1,0 +1,184 @@
+{
+  "run_name": "phase5_b1_fast_150",
+  "experiment": {
+    "label": "B1-Fast-Phase4",
+    "name": "agentic_150_semantic_vector_top5_deepseek_nonthinking",
+    "chunking": "semantic_title_paragraph_overlap_64",
+    "retrieval": "bge_m3_vector_top5",
+    "reranker": "none",
+    "dataset": "eval/agentic_v2/questions.jsonl"
+  },
+  "started_at": "2026-11-10T21:57:08+08:00",
+  "finished_at": "2026-11-10T22:02:49+08:00",
+  "input_hashes": {
+    "questions_sha256": "cd01b410d8520be3133bbd123f6c5a4b764ba4ef5b214f196fce2f609d68515f",
+    "chunks_sha256": "b678172aebb777ec9a0e4e3c131b4640df16f55d85871b2b182ee346a5c6f027"
+  },
+  "config": {
+    "backend": "bge_m3",
+    "mode": "deepseek",
+    "judge": "deepseek",
+    "top_k": 5,
+    "collection": "bge_m3_semantic",
+    "gold_match": "unit",
+    "candidate_k": 20,
+    "rrf_k": 60,
+    "rerank_candidate_k": 8,
+    "thinking": false,
+    "max_tokens": 600,
+    "limit": null,
+    "questions": "eval\\agentic_v2\\questions.jsonl",
+    "chunks": "data\\processed\\chunks.jsonl"
+  },
+  "metrics": {
+    "total_questions": 150,
+    "answerable_questions": 130,
+    "refusal_questions": 20,
+    "hit_at_5": 0.9846,
+    "gold_chunk_recall_at_5": 0.8949,
+    "citation_accuracy": 0.9868,
+    "citation_coverage": 0.5846,
+    "answer_correctness": 0.5385,
+    "refusal_accuracy": 1.0,
+    "answerable_false_refusal": 54,
+    "refusal_false_positive": 0,
+    "correctness_sources": {
+      "manual": 0,
+      "deepseek_auto": 130,
+      "unknown": 0
+    },
+    "latency_ms": {
+      "p50_all": 1269.4,
+      "p95_all": 4192.54,
+      "p50_answerable": 1503.53,
+      "p95_answerable": 4237.69
+    },
+    "by_type": {
+      "fact": {
+        "count": 70,
+        "correct": 55,
+        "accuracy": 0.7857,
+        "mean_gold_recall_at_k": 0.9857
+      },
+      "multi_hop": {
+        "count": 60,
+        "correct": 15,
+        "accuracy": 0.25,
+        "mean_gold_recall_at_k": 0.7889
+      },
+      "refusal": {
+        "count": 20,
+        "correct": 20,
+        "accuracy": 1.0,
+        "mean_gold_recall_at_k": 0.0
+      }
+    }
+  },
+  "agentic_metrics": {
+    "route_accuracy": {
+      "evaluated_cases": 150,
+      "correct_cases": 136,
+      "accuracy": 0.9067,
+      "by_expected_route": {
+        "simple_fact": {
+          "count": 68,
+          "correct": 68,
+          "accuracy": 1.0
+        },
+        "multi_hop": {
+          "count": 35,
+          "correct": 31,
+          "accuracy": 0.8857
+        },
+        "high_risk": {
+          "count": 47,
+          "correct": 37,
+          "accuracy": 0.7872
+        }
+      },
+      "confusion": {
+        "simple_fact": {
+          "simple_fact": 68
+        },
+        "high_risk": {
+          "high_risk": 37,
+          "simple_fact": 7,
+          "multi_hop": 3
+        },
+        "multi_hop": {
+          "multi_hop": 31,
+          "simple_fact": 4
+        }
+      }
+    },
+    "tool_selection_accuracy": {
+      "evaluated_cases": 150,
+      "correct_cases": 150,
+      "accuracy": 1.0,
+      "definition": "all required_tools were invoked"
+    },
+    "tool_success_rate": {
+      "tool_calls": 351,
+      "successful_calls": 348,
+      "success_rate": 0.9915,
+      "by_tool": {
+        "compare_policy_versions": {
+          "calls": 3,
+          "successes": 0,
+          "failures": 3,
+          "success_rate": 0.0
+        },
+        "inspect_latest_policy_snapshot": {
+          "calls": 150,
+          "successes": 150,
+          "failures": 0,
+          "success_rate": 1.0
+        },
+        "search_official_policy_sources": {
+          "calls": 197,
+          "successes": 197,
+          "failures": 0,
+          "success_rate": 1.0
+        },
+        "validate_validity_period": {
+          "calls": 1,
+          "successes": 1,
+          "failures": 0,
+          "success_rate": 1.0
+        }
+      },
+      "failure_codes": {
+        "insufficient_versions": 3
+      }
+    },
+    "multi_step_completion_rate": {
+      "evaluated_cases": 60,
+      "completed_cases": 14,
+      "completion_rate": 0.2333,
+      "definition": "not refused, all expected source_ids cited, and final correctness is true"
+    },
+    "evidence_sufficiency_accuracy": {
+      "evaluated_cases": 150,
+      "correct_cases": 101,
+      "accuracy": 0.6733
+    }
+  },
+  "observability": {
+    "schema_version": "agentic-v2-phase4.1",
+    "enabled": true,
+    "directory": "eval\\results\\phase5_b1_fast_150",
+    "traces": 150,
+    "errors": 0,
+    "tool_failures": 3,
+    "tool_failure_codes": {
+      "insufficient_versions": 3
+    }
+  },
+  "errors": [],
+  "successful_questions": 150,
+  "failed_questions": 0,
+  "human_review": {
+    "status": "exempted_by_project_owner",
+    "executed": false
+  }
+}

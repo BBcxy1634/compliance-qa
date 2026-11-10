@@ -5,12 +5,15 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
-from src.config import DEFAULT_CHUNKS_PATH, DEFAULT_TOP_K
-from src.generate import deepseek_answer, extractive_answer
+from src.agent_graph import (
+    GraphDependencies,
+    answer_with_graph,
+    stream_answer_with_graph,
+)
+from src.config import DEFAULT_CHUNKS_PATH, DEFAULT_TOP_K, MANIFEST_PATH
 from src.retrieve import (
     BM25Retriever,
     BGEVectorRetriever,
@@ -18,7 +21,16 @@ from src.retrieve import (
     HybridRetriever,
     RerankedRetriever,
 )
-from src.schemas import SearchHit
+from src.tools import PolicySnapshotCatalog, ToolRuntime
+
+
+def _default_tool_runtime(retriever: Any) -> ToolRuntime:
+    catalog = (
+        PolicySnapshotCatalog.from_jsonl(MANIFEST_PATH)
+        if MANIFEST_PATH.exists()
+        else None
+    )
+    return ToolRuntime(retriever, snapshot_catalog=catalog)
 
 
 def create_retriever(
@@ -70,51 +82,55 @@ def answer_with_retriever(
     top_k: int,
     thinking: bool = True,
     max_tokens: int | None = None,
+    conversation_context: dict[str, Any] | None = None,
+    tool_runtime: ToolRuntime | None = None,
 ) -> dict[str, Any]:
-    started = time.perf_counter()
-    hits = retriever.search(question, top_k=top_k)
-    retrieval_ms = (time.perf_counter() - started) * 1000
-    retrieval_breakdown = getattr(retriever, "last_timing_ms", {})
-    min_score = 0.25 if backend == "bge_m3" else 0.5
-    if mode == "deepseek":
-        result = deepseek_answer(
-            question,
-            hits,
-            thinking=thinking,
-            **({"max_tokens": max_tokens} if max_tokens is not None else {}),
-        )
-    else:
-        result = extractive_answer(
-            question,
-            hits,
-            min_score=min_score,
-            enforce_term_coverage=backend == "bm25",
+    return answer_with_graph(
+        question,
+        GraphDependencies(
+            retriever=retriever,
             backend=backend,
-        )
-    total_ms = (time.perf_counter() - started) * 1000
-    result.update(
-        {
-            "question": question,
-            "backend": backend,
-            "thinking": thinking,
-            "retrieval_ms": round(retrieval_ms, 2),
-            "retrieval_breakdown": retrieval_breakdown,
-            "generation_ms": round(max(0.0, total_ms - retrieval_ms), 2),
-            "total_ms": round(total_ms, 2),
-            "hits": [
-                {
-                    "score": round(hit.score, 4),
-                    "chunk_id": hit.chunk.get("chunk_id"),
-                    "title": hit.chunk.get("title"),
-                    "source": hit.chunk.get("source"),
-                    "page_label": hit.chunk.get("page_label"),
-                    "text": hit.chunk.get("text"),
-                }
-                for hit in hits
-            ],
-        }
+            generation_mode="deepseek" if mode == "deepseek" else "extractive",
+            top_k=top_k,
+            thinking=thinking,
+            max_tokens=max_tokens,
+            tool_runtime=tool_runtime or _default_tool_runtime(retriever),
+        ),
+        conversation_context=conversation_context,
     )
-    return result
+
+
+def stream_answer_with_retriever(
+    question: str,
+    *,
+    retriever: (
+        BM25Retriever
+        | BGEVectorRetriever
+        | HybridRetriever
+        | RerankedRetriever
+    ),
+    backend: str,
+    top_k: int,
+    thinking: bool = True,
+    max_tokens: int | None = None,
+    conversation_context: dict[str, Any] | None = None,
+    tool_runtime: ToolRuntime | None = None,
+) -> Iterator[dict[str, Any]]:
+    """Stream the controlled graph's answer events."""
+    yield from stream_answer_with_graph(
+        question,
+        GraphDependencies(
+            retriever=retriever,
+            backend=backend,
+            generation_mode="deepseek",
+            top_k=top_k,
+            thinking=thinking,
+            max_tokens=max_tokens,
+            stream_tokens=True,
+            tool_runtime=tool_runtime or _default_tool_runtime(retriever),
+        ),
+        conversation_context=conversation_context,
+    )
 
 
 def answer_question(

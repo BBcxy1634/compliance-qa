@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Iterator
 
 from src.config import (
     DEEPSEEK_API_KEY,
@@ -16,6 +17,12 @@ from src.schemas import SearchHit
 
 
 REFUSAL_TEXT = "文档中未找到足够依据，暂时无法回答这个问题。"
+DEEPSEEK_PROMPT_VERSION = "deepseek-compliance-v2.1"
+EXTRACTIVE_PROMPT_VERSION = "extractive-template-v1"
+CITATION_PATTERN = re.compile(r"\[C(\d+)\]")
+ENTITY_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9])[A-Z][A-Z0-9.-]{1,}(?![A-Za-z0-9])"
+)
 HEADING_ONLY_LINES = {
     "What is the policy?",
     "Why does eBay have this policy?",
@@ -30,7 +37,23 @@ SYSTEM_PROMPT = """你是跨境卖家合规问答助手。
 每个事实性句子或列表项都必须标注对应引用，例如 [C1] 或 [C1][C2]；只能使用检索片段中实际存在的引用编号。
 如果证据只能回答部分问题，明确说明可以确认的内容和无法确认的部分，不要猜测。
 如果所有检索片段都不足以回答，只输出：文档中未找到足够依据，暂时无法回答这个问题。
+比较或“更适合”问题必须分别说明优势和限制；计数题必须写出所有数量；
+材料、退税和流程题必须写出办理所需的证明或凭证。
 回答必须完整覆盖问题所需事实，但要精炼，避免重复、复述整段资料和无关背景。"""
+REPAIR_INSTRUCTION = """本轮证据已经通过充分性检查。
+根据片段逐项回答所有子问题，优先覆盖数字、期限、条件、材料和例外。
+不得整体拒答；只对确实缺失的细节说明无法确认，其余内容必须回答并标注引用。"""
+
+
+class ModelGenerationError(RuntimeError):
+    """Public generation failure without provider-specific details."""
+
+
+@dataclass
+class EvidenceAssessment:
+    sufficient: bool
+    strong_hits: list[SearchHit]
+    reason: str
 
 
 def _citation(chunk: dict[str, Any]) -> dict[str, Any]:
@@ -43,11 +66,31 @@ def _citation(chunk: dict[str, Any]) -> dict[str, Any]:
         location = f"第 {page} 页"
     return {
         "title": chunk.get("title", chunk.get("source", "")),
+        "source_id": chunk.get("source_id", ""),
         "source": chunk.get("source", ""),
         "location": location,
         "url": chunk.get("url", ""),
         "chunk_id": chunk.get("chunk_id", ""),
     }
+
+
+def filter_used_citations(
+    answer: str,
+    citations: list[dict[str, Any]],
+    *,
+    refused: bool = False,
+) -> list[dict[str, Any]]:
+    """Keep only citations whose IDs appear in the final answer body."""
+    if refused:
+        return []
+    used_ids = {
+        f"C{number}" for number in CITATION_PATTERN.findall(answer or "")
+    }
+    return [
+        citation
+        for citation in citations
+        if citation.get("citation_id") in used_ids
+    ]
 
 
 def _candidate_sentences(text: str) -> list[str]:
@@ -61,6 +104,82 @@ def _candidate_sentences(text: str) -> list[str]:
     return candidates
 
 
+def assess_evidence(
+    question: str,
+    hits: list[SearchHit],
+    *,
+    max_hits: int = 3,
+    min_score: float = 0.5,
+    enforce_term_coverage: bool = True,
+    require_term_coverage: bool | None = None,
+    backend: str = "bm25",
+) -> EvidenceAssessment:
+    """Apply the existing extractive evidence rules without generating text."""
+    strong_hits = [hit for hit in hits if hit.score >= min_score][:max_hits]
+    query_tokens = set(tokenize(question))
+    combined_text = "\n".join(hit.chunk["text"] for hit in strong_hits)
+    hit_tokens = set(tokenize(combined_text))
+    matched_tokens = query_tokens.intersection(hit_tokens)
+    entity_anchors = {
+        token.lower()
+        for token in ENTITY_PATTERN.findall(question)
+    }
+    entity_anchors.update(
+        token
+        for token in query_tokens
+        if len(token) >= 2
+        and re.search(r"(?:法|税|证|仓|清单)$", token)
+    )
+    query_years = set(re.findall(r"(?:19|20)\d{2}", question))
+    hit_years = set(re.findall(r"(?:19|20)\d{2}", combined_text))
+    for hit in strong_hits:
+        for key in (
+            "published_at",
+            "updated_at",
+            "captured_at",
+        ):
+            hit_years.update(
+                re.findall(
+                    r"(?:19|20)\d{2}",
+                    str(hit.chunk.get(key, "")),
+                )
+            )
+    years_covered = True
+    if backend == "bge_m3" and strong_hits:
+        coverage_ok = strong_hits[0].score >= 0.65 or len(
+            matched_tokens
+        ) >= 2
+        if query_years and not query_years.issubset(hit_years):
+            coverage_ok = False
+            years_covered = False
+    else:
+        coverage_ok = (
+            len(matched_tokens) >= 2
+            if len(query_tokens) > 1
+            else bool(matched_tokens)
+        )
+        if query_years and not query_years.issubset(hit_years):
+            coverage_ok = False
+            years_covered = False
+    requires_coverage = (
+        enforce_term_coverage
+        if require_term_coverage is None
+        else require_term_coverage
+    )
+    if requires_coverage and entity_anchors - hit_tokens:
+        coverage_ok = False
+    if not strong_hits:
+        return EvidenceAssessment(False, strong_hits, "no_strong_hits")
+    if requires_coverage and not coverage_ok:
+        reason = (
+            "query_year_not_covered"
+            if not years_covered
+            else "term_coverage_missing"
+        )
+        return EvidenceAssessment(False, strong_hits, reason)
+    return EvidenceAssessment(True, strong_hits, "sufficient")
+
+
 def extractive_answer(
     question: str,
     hits: list[SearchHit],
@@ -69,39 +188,34 @@ def extractive_answer(
     min_score: float = 0.5,
     enforce_term_coverage: bool = True,
     backend: str = "bm25",
+    assume_sufficient: bool = False,
 ) -> dict[str, Any]:
     """Build a grounded answer without calling an external model."""
-    strong_hits = [hit for hit in hits if hit.score >= min_score][:max_hits]
-    query_tokens = set(tokenize(question))
-    combined_text = "\n".join(hit.chunk["text"] for hit in strong_hits)
-    hit_tokens = set(tokenize(combined_text))
-    matched_tokens = query_tokens.intersection(hit_tokens)
-    query_years = set(re.findall(r"(?:19|20)\d{2}", question))
-    if backend == "bge_m3" and strong_hits:
-        top_text = strong_hits[0].chunk["text"]
-        top_tokens = set(tokenize(top_text))
-        top_years = set(re.findall(r"(?:19|20)\d{2}", top_text))
-        coverage_ok = strong_hits[0].score >= 0.65 or len(
-            query_tokens.intersection(top_tokens)
-        ) >= 2
-        if query_years and not query_years.issubset(top_years):
-            coverage_ok = False
+    if assume_sufficient:
+        strong_hits = hits[:max_hits]
+        sufficient = bool(strong_hits)
+        refusal_reason = "" if sufficient else "no_strong_hits"
     else:
-        hit_years = set(re.findall(r"(?:19|20)\d{2}", combined_text))
-        coverage_ok = (
-            len(matched_tokens) >= 2
-            if len(query_tokens) > 1
-            else bool(matched_tokens)
+        assessment = assess_evidence(
+            question,
+            hits,
+            max_hits=max_hits,
+            min_score=min_score,
+            enforce_term_coverage=enforce_term_coverage,
+            backend=backend,
         )
-        if query_years and not query_years.issubset(hit_years):
-            coverage_ok = False
-    requires_coverage = backend == "bge_m3" or enforce_term_coverage
-    if not strong_hits or (requires_coverage and not coverage_ok):
+        strong_hits = assessment.strong_hits
+        sufficient = assessment.sufficient
+        refusal_reason = assessment.reason
+    query_tokens = set(tokenize(question))
+    if not sufficient:
         return {
             "answer": REFUSAL_TEXT,
             "citations": [],
             "mode": "extractive",
             "refused": True,
+            "prompt_version": EXTRACTIVE_PROMPT_VERSION,
+            "refusal_reason": refusal_reason,
         }
 
     selected: list[tuple[str, int, dict[str, Any]]] = []
@@ -146,6 +260,7 @@ def extractive_answer(
         "citations": citations,
         "mode": "extractive",
         "refused": False,
+        "prompt_version": EXTRACTIVE_PROMPT_VERSION,
     }
 
 
@@ -163,41 +278,100 @@ def build_context(hits: list[SearchHit]) -> str:
     return "\n\n".join(blocks)
 
 
-def deepseek_answer(
+def _conversation_prompt_block(
+    conversation_context: dict[str, Any] | None,
+) -> str:
+    if not conversation_context:
+        return ""
+    summary = str(conversation_context.get("summary", "")).strip()
+    recent_turns = list(conversation_context.get("recent_turns", []))
+    if not summary and not recent_turns:
+        return ""
+    lines = [
+        "会话上下文（仅用于理解追问和指代；不能作为事实依据，"
+        "事实仍必须来自本次检索片段）："
+    ]
+    if summary:
+        lines.append(f"较早会话摘要：{summary}")
+    for turn in recent_turns[-4:]:
+        outcome = "拒答" if turn.get("refused") else "回答"
+        lines.append(
+            f"上一轮用户：{str(turn.get('question', ''))[:300]}"
+        )
+        lines.append(
+            f"上一轮助手（{outcome}）：{str(turn.get('answer', ''))[:500]}"
+        )
+    return "\n".join(lines)
+
+
+def _deepseek_messages(
     question: str,
     hits: list[SearchHit],
+    conversation_context: dict[str, Any] | None = None,
     *,
-    thinking: bool = True,
-    max_tokens: int = DEEPSEEK_MAX_TOKENS,
-) -> dict[str, Any]:
-    """Generate an answer through the DeepSeek OpenAI-compatible API."""
-    if not DEEPSEEK_API_KEY:
-        raise RuntimeError(
-            "DEEPSEEK_API_KEY is not configured. Use --mode extractive "
-            "or add the key to .env."
-        )
-    from openai import OpenAI
+    repair: bool = False,
+    required_source_count: int = 1,
+) -> list[dict[str, str]]:
+    context_block = _conversation_prompt_block(conversation_context)
+    context_section = f"\n\n{context_block}" if context_block else ""
+    repair_section = f"{REPAIR_INSTRUCTION}\n\n" if repair else ""
+    source_section = (
+        f"\n高风险引用要求：必须引用至少 {required_source_count} 个不同来源。"
+        if required_source_count > 1
+        else ""
+    )
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                f"{repair_section}问题：{question}"
+                f"{context_section}{source_section}"
+                f"\n\n检索片段：\n{build_context(hits)}"
+            ),
+        },
+    ]
 
-    client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
-        base_url=DEEPSEEK_BASE_URL,
-    )
-    response = client.chat.completions.create(
-        model=DEEPSEEK_MODEL,
-        temperature=0,
-        max_tokens=max_tokens,
-        extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": f"问题：{question}\n\n检索片段：\n{build_context(hits)}",
-            },
-        ],
-    )
-    answer = (response.choices[0].message.content or "").strip()
+
+def _deepseek_client() -> Any:
+    if not DEEPSEEK_API_KEY:
+        raise ModelGenerationError("DeepSeek API key is not configured.")
+    try:
+        from openai import OpenAI
+
+        return OpenAI(
+            api_key=DEEPSEEK_API_KEY,
+            base_url=DEEPSEEK_BASE_URL,
+        )
+    except Exception as exc:
+        raise ModelGenerationError("Failed to initialize the model client.") from exc
+
+
+def _usage_payload(usage: Any) -> dict[str, Any]:
+    if usage is None:
+        return {}
+    if hasattr(usage, "model_dump"):
+        return usage.model_dump()
+    return {
+        "prompt_tokens": getattr(usage, "prompt_tokens", None),
+        "completion_tokens": getattr(usage, "completion_tokens", None),
+        "total_tokens": getattr(usage, "total_tokens", None),
+    }
+
+
+def _deepseek_result(
+    answer: str,
+    hits: list[SearchHit],
+    *,
+    thinking: bool,
+    max_tokens: int,
+    model: str,
+    usage: dict[str, Any],
+) -> dict[str, Any]:
+    normalized_answer = answer.strip()
     refused = (
-        REFUSAL_TEXT in answer and len(answer) <= len(REFUSAL_TEXT) + 20
+        REFUSAL_TEXT in normalized_answer
+        and len(normalized_answer) <= len(REFUSAL_TEXT) + 20
     )
     citations = []
     if not refused:
@@ -206,15 +380,7 @@ def deepseek_answer(
             citation["citation_id"] = f"C{index}"
             citation["score"] = round(hit.score, 4)
             citations.append(citation)
-    usage = (
-        response.usage.model_dump()
-        if hasattr(response.usage, "model_dump")
-        else {
-            "prompt_tokens": getattr(response.usage, "prompt_tokens", None),
-            "completion_tokens": getattr(response.usage, "completion_tokens", None),
-            "total_tokens": getattr(response.usage, "total_tokens", None),
-        }
-    )
+    citations = filter_used_citations(answer, citations, refused=refused)
     return {
         "answer": answer or REFUSAL_TEXT,
         "citations": citations,
@@ -222,6 +388,104 @@ def deepseek_answer(
         "thinking": thinking,
         "max_tokens": max_tokens,
         "refused": refused,
-        "model": response.model,
+        "model": model,
         "usage": usage,
+        "prompt_version": DEEPSEEK_PROMPT_VERSION,
     }
+
+
+def deepseek_answer(
+    question: str,
+    hits: list[SearchHit],
+    *,
+    thinking: bool = True,
+    max_tokens: int = DEEPSEEK_MAX_TOKENS,
+    conversation_context: dict[str, Any] | None = None,
+    repair: bool = False,
+    required_source_count: int = 1,
+) -> dict[str, Any]:
+    """Generate an answer through the DeepSeek OpenAI-compatible API."""
+    client = _deepseek_client()
+    try:
+        response = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            temperature=0,
+            max_tokens=max_tokens,
+            extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
+            messages=_deepseek_messages(
+                question,
+                hits,
+                conversation_context,
+                repair=repair,
+                required_source_count=required_source_count,
+            ),
+        )
+    except Exception as exc:
+        raise ModelGenerationError("The model request failed.") from exc
+    answer = (response.choices[0].message.content or "").strip()
+    return _deepseek_result(
+        answer,
+        hits,
+        thinking=thinking,
+        max_tokens=max_tokens,
+        model=response.model,
+        usage=_usage_payload(response.usage),
+    )
+
+
+def deepseek_answer_stream(
+    question: str,
+    hits: list[SearchHit],
+    *,
+    thinking: bool = True,
+    max_tokens: int = DEEPSEEK_MAX_TOKENS,
+    conversation_context: dict[str, Any] | None = None,
+    required_source_count: int = 1,
+) -> Iterator[dict[str, Any]]:
+    """Yield answer deltas, followed by the finalized non-stream result."""
+    client = _deepseek_client()
+    try:
+        response = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            temperature=0,
+            max_tokens=max_tokens,
+            stream=True,
+            stream_options={"include_usage": True},
+            extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
+            messages=_deepseek_messages(
+                question,
+                hits,
+                conversation_context,
+                required_source_count=required_source_count,
+            ),
+        )
+    except Exception as exc:
+        raise ModelGenerationError("The model request failed.") from exc
+    parts: list[str] = []
+    model = DEEPSEEK_MODEL
+    usage: dict[str, Any] = {}
+    try:
+        for chunk in response:
+            model = getattr(chunk, "model", None) or model
+            chunk_usage = getattr(chunk, "usage", None)
+            if chunk_usage is not None:
+                usage = _usage_payload(chunk_usage)
+            choices = getattr(chunk, "choices", None) or []
+            if not choices:
+                continue
+            delta = getattr(choices[0].delta, "content", None) or ""
+            if delta:
+                parts.append(delta)
+                yield {"type": "token", "delta": delta}
+    except Exception as exc:
+        raise ModelGenerationError("The model stream failed.") from exc
+
+    result = _deepseek_result(
+        "".join(parts),
+        hits,
+        thinking=thinking,
+        max_tokens=max_tokens,
+        model=model,
+        usage=usage,
+    )
+    yield {"type": "result", "result": result}

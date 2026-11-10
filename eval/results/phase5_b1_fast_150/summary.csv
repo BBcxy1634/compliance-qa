@@ -1,0 +1,14 @@
+﻿metric,value
+Hit@5,0.9846
+citation_accuracy,0.9868
+answer_correctness,0.5385
+refusal_accuracy,1.0
+gold_unit_recall@5,0.8949
+citation_coverage,0.5846
+P50_latency_ms,1269.4
+P95_latency_ms,4192.54
+agentic_route_accuracy,0.9067
+agentic_tool_selection_accuracy,1.0
+agentic_tool_success_rate,0.9915
+agentic_multi_step_completion_rate,0.2333
+agentic_evidence_sufficiency_accuracy,0.6733

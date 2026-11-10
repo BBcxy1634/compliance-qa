@@ -2,7 +2,12 @@
 
 from collections import Counter
 
+import pytest
+
 from scripts.classify_badcases import CATEGORY_LABELS, build_badcases
+
+
+pytestmark = pytest.mark.data
 
 
 def test_all_observed_failures_are_classified() -> None:
