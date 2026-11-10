@@ -283,11 +283,15 @@ Phase 5 verification (2026-11-10):
 - The smoke completes 3/3 questions with refusal accuracy 1.0 and route accuracy
   1.0.
 - Full local tests pass: 94 tests.
+- GitHub Actions run `42826433942` passed both jobs.
+- The complete 150-question B1 Fast DeepSeek evaluation passed with 150
+  successful and 0 failed requests.
+- Automatic answer correctness is 0.5385; multi-hop correctness is 0.25, making
+  retrieval sufficiency for multi-hop questions the primary known gap.
 - Compose, Dockerfile, Docker context, workflow, and fixture structure are
   covered by static packaging tests.
 - Docker is not installed on the current machine, so no container build or
   startup is claimed.
-- GitHub Actions has not been executed because this phase was not pushed.
 - `VERSION`, README, architecture, deployment, limitation/failure, changelog,
   and v2.0.0 release-note drafts are updated.
 

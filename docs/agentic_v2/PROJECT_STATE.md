@@ -209,10 +209,10 @@ Results:
 - No hosted trace UI; Phase 4 intentionally uses local JSONL traces.
 - New Phase 4 questions and agentic labels are `draft`; independent human
   review was not executed and was exempted by the project owner.
-- The full paid DeepSeek evaluation has not been run in Phase 4.
 - Docker is not installed on the current development machine, so the container
   build and runtime have not been executed.
-- GitHub Actions has not run because the branch was not pushed in Phase 5.
+- The complete 150-question B1 Fast DeepSeek evaluation shows weak multi-hop
+  correctness and evidence sufficiency.
 - Short-term sessions and local traces are process-local and do not support
   multi-replica coordination.
 - Current Gradio app is local and single-request oriented.
@@ -295,12 +295,22 @@ Results:
 - 86 deterministic tests were selected with data-dependent tests excluded.
 - The synthetic evaluation smoke completed 3/3 questions.
 - Smoke refusal accuracy was 1.0 and route accuracy was 1.0.
+- GitHub Actions run `42826433942` passed both jobs for commit `e5ca1f5`.
 - Packaging tests parsed Compose and workflow YAML and checked the Dockerfile,
   Docker context, and fixture structure.
+- The full 150-question B1 Fast DeepSeek evaluation completed with 150
+  successful and 0 failed requests.
+- Automatic evaluation results:
+  - original metrics: Hit@5 0.9846, citation accuracy 0.9868, answer
+    correctness 0.5385, refusal accuracy 1.0
+  - answer correctness by type: fact 0.7857, multi-hop 0.25, refusal 1.0
+  - route accuracy 0.9067, tool selection accuracy 1.0, tool success rate
+    0.9915, multi-step completion 0.2333, evidence sufficiency accuracy 0.6733
+  - P50 answer latency 1269.4 ms, P95 4192.54 ms
+- The final evaluation used 198,442 prompt tokens and 23,341 completion tokens.
+  At the recorded off-peak rates, estimated model cost was CNY 0.2918.
 - Docker is not installed locally, so `docker compose config`, image build, and
   service startup were not executed on this machine.
-- Remote GitHub Actions was not executed. The workflow is prepared but has not
-  produced a CI result.
 
 The detailed operation and failure contract is in
 `docs/agentic_v2/DEPLOYMENT.md` and
@@ -323,9 +333,7 @@ citations.
 The repository now includes Docker Compose packaging, a GitHub Actions workflow,
 and v2.0.0 release notes. These actions still require explicit approval:
 
-- push the branch or open a pull request to run remote CI
 - run an actual Docker build and health check on a Docker-enabled machine
-- decide whether to run the full paid V2 evaluation
 - decide whether independent human review is required before release
 - create the `v2.0.0` tag and GitHub Release
 - merge the branch to `master`

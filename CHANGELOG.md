@@ -37,14 +37,21 @@ Status: release candidate prepared; Git tag and GitHub Release are not created.
 - 86 deterministic tests are selected when data-dependent tests are excluded.
 - The synthetic BM25/extractive evaluation smoke passes 3/3 questions without a
   DeepSeek key or network model call.
+- GitHub Actions run `42826433942` passed both deterministic test and evaluation
+  smoke jobs.
+- The full 150-question B1 Fast DeepSeek evaluation completed with 150
+  successful and 0 failed requests.
+- The evaluation recorded route accuracy 0.9067, tool selection accuracy 1.0,
+  tool success rate 0.9915, and answer correctness 0.5385.
 - Python YAML parsing and packaging tests validate the Compose, Dockerfile,
   Docker context, workflow, and smoke fixture structure.
 
 ### Notes
 
-- Docker and GitHub Actions were not executed in the current local environment.
+- Docker was not executed in the current local environment.
 - Independent human review has not been completed for the V2 question labels.
-- No full paid V2 DeepSeek evaluation was run in Phase 4 or Phase 5.
+- The full V2 automatic evaluation shows weak multi-hop correctness and evidence
+  sufficiency; these are documented as current limitations.
 - Existing benchmark latency and cost results are v1 reference measurements,
   not a new V2 paid benchmark.
 

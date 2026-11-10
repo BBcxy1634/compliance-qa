@@ -150,8 +150,30 @@ Run the optional B3 comparison:
   --run-name phase4_b3_deepseek
 ```
 
-The Phase 4 implementation did not run the full DeepSeek evaluation because it
-would require network access, an API key, and paid model calls.
+Phase 5 ran the full evaluation as `phase5_b1_fast_150` in a network-approved
+environment.
+
+| Metric | Result |
+|---|---:|
+| Successful / failed requests | 150 / 0 |
+| Hit@5 | 0.9846 |
+| Gold unit recall@5 | 0.8949 |
+| Citation accuracy | 0.9868 |
+| Answer correctness | 0.5385 |
+| Fact / multi-hop / refusal accuracy | 0.7857 / 0.2500 / 1.0000 |
+| Route accuracy | 0.9067 |
+| Tool selection accuracy | 1.0000 |
+| Tool success rate | 0.9915 |
+| Multi-step completion | 0.2333 |
+| Evidence sufficiency accuracy | 0.6733 |
+
+The `deepseek_auto` correctness source covered all 130 answerable questions.
+There is still no independent human review. At the recorded off-peak rates,
+198,442 prompt tokens and 23,341 completion tokens correspond to an estimated
+CNY 0.2918 model cost.
+
+The primary quality gap is multi-hop evidence sufficiency and completion. The
+result is recorded in `eval/results/phase5_b1_fast_150/summary.json`.
 
 ## Outputs
 

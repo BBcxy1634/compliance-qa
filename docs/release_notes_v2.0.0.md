@@ -46,7 +46,8 @@ Phase 5 verification performed locally:
   static tests.
 
 Docker is not installed on the current machine, so no container build or startup
-was executed. GitHub Actions has not run because this phase was not pushed.
+was executed. GitHub Actions run `42826433942` passed both jobs for commit
+`e5ca1f5`.
 
 ## Evaluation Status
 
@@ -55,13 +56,21 @@ was executed. GitHub Actions has not run because this phase was not pushed.
 - New Phase 4 labels: `draft`.
 - Deterministic route accuracy against draft labels: 136/150 (`0.9067`).
 - Independent human review: not executed and not represented as passed.
-- Full paid DeepSeek V2 evaluation: not run in Phase 4 or Phase 5.
+- Full DeepSeek V2 evaluation: 150/150 requests completed, 0 failed.
+- Answer correctness: 0.5385 overall, 0.7857 fact, 0.25 multi-hop, 1.0 refusal.
+- Citation accuracy: 0.9868.
+- Agentic route accuracy: 0.9067.
+- Tool selection accuracy: 1.0; tool success rate: 0.9915.
+- Multi-step completion: 0.2333; evidence sufficiency accuracy: 0.6733.
+- Estimated model cost at recorded off-peak rates: CNY 0.2918.
 
 ## Performance Status
 
-The recorded B1 Fast benchmark remains the v1 reference: mean latency 1.92
-seconds, P95 3.31 seconds, and mean cost about CNY 0.0010 per request. These are
-not new V2 end-to-end measurements.
+The recorded 100-request B1 Fast benchmark remains the v1 reference: mean
+latency 1.92 seconds, P95 3.31 seconds, and mean cost about CNY 0.0010 per
+request. The Phase 5 full evaluation separately recorded V2 answer P50 of
+1269.4 ms and P95 of 4192.54 ms. It is an evaluation run, not a new 100-request
+latency benchmark.
 
 ## Upgrade and Run
 
@@ -90,7 +99,6 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 
 - Run the GitHub Actions workflow after pushing the branch or opening a PR.
 - Run an actual Docker build and startup on a Docker-enabled machine.
-- Decide whether to run the full paid 150-question DeepSeek evaluation.
 - Decide whether draft labels need independent human review before release.
 - Create the `v2.0.0` tag and GitHub Release.
 - Merge to `master`.
@@ -98,7 +106,9 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 ## Known Limitations
 
 - No human-approved V2 evaluation subset exists yet.
-- No full paid V2 evaluation or V2 benchmark has been run.
+- Multi-hop correctness and multi-step completion remain weak in the completed
+  automatic evaluation.
+- No new 100-request V2 benchmark has been run.
 - Policy version comparison needs a multi-snapshot corpus.
 - Sessions and traces are not shared across replicas.
 - B3 is slow on CPU.

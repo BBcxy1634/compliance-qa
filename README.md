@@ -21,8 +21,9 @@ V2 在不改变 B1 Fast 默认路径和原有评价口径的前提下，增加�
 - Docker Compose 单服务打包、GitHub Actions 确定性测试和评测 smoke。
 
 当前 V2 自动化指标中的新增评测标签仍为 `draft`。独立人工复核没有执行，
-不能将自动判题或 draft 标签描述为人工通过。完整付费 DeepSeek 评测也未在
-Phase 4/5 重新运行。
+不能将自动判题或 draft 标签描述为人工通过。Phase 5 已完成一次 150 题
+B1 Fast 付费自动评测，150/150 请求成功，答案正确率 0.5385，引用准确率
+0.9868，拒答准确率 1.00。多跳题答案正确率仅 0.25，是当前主要短板。
 
 API、图状态和工具契约见 [API](docs/agentic_v2/API.md)、
 [Graph](docs/agentic_v2/GRAPH.md) 和 [Tools](docs/agentic_v2/TOOLS.md)。
@@ -30,6 +31,30 @@ V2 架构、部署与限制分别见
 [Architecture](docs/agentic_v2/ARCHITECTURE.md)、
 [Deployment](docs/agentic_v2/DEPLOYMENT.md) 和
 [Limitations and failures](docs/agentic_v2/LIMITATIONS_AND_FAILURES.md)。
+
+### V2 150 题自动评测
+
+运行 `phase5_b1_fast_150` 使用 B1 Fast、非思考生成和 DeepSeek 自动判题。
+150 个请求全部完成，0 个失败请求。
+
+| 指标 | 结果 |
+|---|---:|
+| Hit@5 | 0.9846 |
+| Gold unit recall@5 | 0.8949 |
+| 引用准确率 | 0.9868 |
+| 答案正确率 | 0.5385 |
+| 事实题正确率 | 0.7857 |
+| 多跳题正确率 | 0.2500 |
+| 拒答准确率 | 1.0000 |
+| Agentic 路由准确率 | 0.9067 |
+| 工具选择准确率 | 1.0000 |
+| 工具成功率 | 0.9915 |
+| 多步完成率 | 0.2333 |
+| 证据充分性准确率 | 0.6733 |
+
+结果文件位于
+[`eval/results/phase5_b1_fast_150/summary.json`](eval/results/phase5_b1_fast_150/summary.json)。
+该结果是自动判题结果，不代表人工复核通过。
 
 ## 系统架构
 
@@ -247,8 +272,8 @@ compliance-qa/
 - 自动判题结果尚未完成人工复核。
 - Demo 为单轮问答，不保存会话历史；B3 首次加载在 CPU 上较慢。
 - V2 的 150 题新增标签是 `draft`，没有人工通过结论。
-- V2 的完整付费 DeepSeek 评测尚未运行。
-- 当前轮次没有实际启动 Docker 容器，也没有运行远程 GitHub Actions。
+- V2 自动评测显示多跳题正确率和多步完成率偏低。
+- 当前轮次没有实际启动 Docker 容器；远程 GitHub Actions 已通过。
 - 短期会话、Trace 和模型缓存没有实现多实例共享。
 
 ## 许可证与数据权利

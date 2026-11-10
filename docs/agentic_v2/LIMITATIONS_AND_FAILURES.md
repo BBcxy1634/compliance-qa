@@ -5,14 +5,14 @@
 | Area | Current limitation |
 |---|---|
 | Human review | The 150-question agentic labels remain `draft`; independent human review was not executed |
-| Paid evaluation | No full DeepSeek V2 evaluation was run in Phase 4 or Phase 5 |
+| Automatic quality | Full 150-question answer correctness is 0.5385; multi-hop correctness is 0.25 |
 | Policy history | The current corpus has one snapshot per `source_id`, so real version comparison returns `insufficient_versions` |
 | Deployment | No authentication, rate limiting, tenant isolation, or production secret manager |
 | Sessions | Short-term context is process-local, bounded, and not shared between replicas |
 | Trace | Local JSONL only; no hosted UI or distributed trace correlation |
 | Hardware | B3 CPU reranking is slow; Compose defaults to CPU |
 | Data startup | Clean checkout does not include official HTML/PDF, chunks, or Chroma data |
-| Latency | B1 Fast reference P95 is 3.31 seconds and remains above the 3-second target |
+| Latency | The Phase 5 evaluation recorded answer P95 of 4.19 seconds; the older v1 benchmark P95 is 3.31 seconds |
 
 ## Failure Cases
 
@@ -41,10 +41,22 @@ v1 reference, not as a new V2 paid benchmark:
 | B1 Fast | 1.92 s | 3.31 s | 0.0010 |
 | B3 | 8.17 s | 12.31 s | 0.0011 |
 
-These numbers used `deepseek-flash` pricing captured on 2026-10-31. The graph
-adds local routing and tool overhead, and no Phase 5 claim is made about the
-V2 end-to-end paid latency or cost. Measurements must be regenerated with
-`bench.py` before publishing new performance claims.
+These numbers used `deepseek-flash` pricing captured on 2026-10-31. They remain
+the 100-request benchmark reference and are not a V2 benchmark.
+
+The Phase 5 full evaluation separately recorded:
+
+| Recorded metric | Value |
+|---|---:|
+| Answer P50 | 1269.4 ms |
+| Answer P95 | 4192.54 ms |
+| Prompt tokens | 198,442 |
+| Completion tokens | 23,341 |
+| Estimated model cost | CNY 0.2918 |
+
+The cost estimate includes answer generation and automatic judging at recorded
+off-peak rates. It is not a billing statement. A new 100-request V2 benchmark is
+still required before making a new throughput claim.
 
 ## Release Boundary
 
