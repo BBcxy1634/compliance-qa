@@ -10,8 +10,8 @@ Last updated: 2026-11-10
 | Current branch | `feat/agentic-v2` |
 | Base release | `v1.0.0` |
 | Base commit | `1ea2f4b9161b921d126466f86e69782bec9b34b1` |
-| Current V2 phase | Phase 1: FastAPI and SSE complete |
-| V2 code status | Phase 1 complete |
+| Current V2 phase | Phase 2: LangGraph state machine and routing complete |
+| V2 code status | Phase 2 complete |
 | Current release state | v1.0.0 remains the released version |
 
 ## V2 Goal
@@ -68,8 +68,10 @@ PPT / HTML / PDF
   -> BGE-M3 vectors in Chroma
   -> optional BM25 + RRF
   -> optional BGE reranker
-  -> DeepSeek answer generation
-  -> citation filtering or refusal
+  -> controlled LangGraph routing
+  -> evidence assessment
+  -> DeepSeek or extractive generation
+  -> citation verification or refusal
   -> Gradio UI / CLI
 ```
 
@@ -81,7 +83,8 @@ Important existing modules:
 | `src/embed.py` | BGE-M3 embedding and Chroma indexing |
 | `src/retrieve.py` | BM25, vector retrieval, RRF, reranker |
 | `src/generate.py` | extractive and DeepSeek generation |
-| `src/rag.py` | current CLI and answer orchestration |
+| `src/agent_graph.py` | serializable state, deterministic routing, six-node graph |
+| `src/rag.py` | CLI plus graph adapters for synchronous and streaming answers |
 | `app.py` | Gradio demo |
 | `src/demo.py` | demo modes, HTML rendering, citation filtering |
 | `src/api.py` | FastAPI models, synchronous answer endpoint, and SSE streaming |
@@ -125,9 +128,39 @@ Results:
 - Synchronous and SSE paths reuse the existing retriever and generation
   orchestration.
 
+## Phase 2 Verification
+
+Validation performed on 2026-11-10:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Results:
+
+- 58 tests passed.
+- LangGraph 1.2.20 and its exact resolved transitive versions are pinned in
+  `requirements.txt`.
+- Graph tests use deterministic retrievers and generation stubs and do not call
+  DeepSeek.
+- Simple fact questions follow the B1 Fast path; default fast routing does not
+  create or invoke a reranker.
+- Multi-hop questions split into at most three deterministic retrieval queries.
+- High-risk questions require two distinct sources and refuse when the final
+  answer cites fewer than two.
+- Parameterized tests cover all five approved high-risk rule categories.
+- Insufficient evidence refuses without calling generation.
+- Route decisions and node reasons are recorded in `route_trace`.
+- Graph results are JSON serializable.
+- Synchronous and SSE API behavior remains compatible with the Phase 1 contract.
+- `python scripts/check_environment.py --require-data` passed with Python
+  3.13.2, configured DeepSeek key, CPU device resolution, 271 semantic vectors,
+  and 334 B0 vectors.
+- The graph state and SSE mapping are documented in
+  `docs/agentic_v2/GRAPH.md`.
+
 ## Current Gaps
 
-- No LangGraph state machine or explicit route selection.
 - No tool-calling layer or tool failure handling.
 - No short-term conversation state.
 - No policy-version or date-validation tools.
@@ -139,21 +172,24 @@ Results:
 
 ## Current Phase and Next Task
 
-Phase 1 is complete. The FastAPI application exposes:
+Phase 2 is complete. The FastAPI application exposes:
 
 - `GET /health`
 - `POST /api/v1/answer`
 - `POST /api/v1/answer/stream`
 
-The SSE contract emits `start`, `status`, `token`, `done`, and `error` events.
-DeepSeek output is streamed as incremental token deltas. The `done` event
-contains only citations whose IDs occur in the complete answer body. Refusals
-always return `refused=true` and no citations.
+Both endpoints execute the controlled graph. The SSE contract emits `start`,
+`status`, `token`, `done`, and `error` events. DeepSeek output is streamed as
+incremental token deltas. The `done` event contains only citations whose IDs
+occur in the complete answer body. Refusals always return `refused=true` and no
+citations.
 
-The next task is **Phase 2: LangGraph state machine and routing**. Do not add
-LangGraph nodes or tools until Phase 2 starts.
+The next task is **Phase 3: Tools and Short-Term Conversation**, which is not
+started. Do not add tools or conversation memory until that phase explicitly
+starts.
 
-The API contract is documented in `docs/agentic_v2/API.md`.
+The API contract is documented in `docs/agentic_v2/API.md`. The graph contract
+is documented in `docs/agentic_v2/GRAPH.md`.
 
 ## Environment and Data Rules
 

@@ -1,7 +1,9 @@
 # Compliance RAG API v1
 
-Phase 1 exposes the existing B1 Fast and B3 RAG paths through FastAPI.
-The default mode is `fast`. Neither endpoint calls LangGraph or tools.
+FastAPI exposes the existing B1 Fast and B3 RAG paths through FastAPI. Both the
+synchronous and SSE endpoints run the controlled LangGraph state machine
+documented in `docs/agentic_v2/GRAPH.md`. The default mode is `fast`. Neither
+endpoint calls tools.
 
 Run locally:
 
@@ -52,6 +54,9 @@ The synchronous response contains:
 `citations` contains only citation IDs present in the answer body. A refusal
 always has `refused: true` and an empty `citations` array.
 
+The graph records route decisions internally. They do not add fields to the
+public response model.
+
 ## SSE Events
 
 Each event uses standard SSE framing:
@@ -66,7 +71,7 @@ The events appear in this order:
 
 1. `start`: `request_id`, `mode`, `stream: true`.
 2. `status`: `stage` is one of `retrieving`, `generating`, or
-   `verifying_citations`.
+   `verifying_citations`. The graph emits these stages in that order.
 3. `token`: `delta` contains one incremental answer fragment.
 4. `done`: `request_id`, complete `answer`, `refused`, used `citations`,
    `model`, `timings`, and `usage`.

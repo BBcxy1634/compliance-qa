@@ -90,7 +90,7 @@ Phase 1 verification (2026-11-10):
 
 ## Phase 2: LangGraph State Machine and Routing
 
-Status: not started
+Status: complete
 
 Goal:
 
@@ -120,6 +120,20 @@ Acceptance:
 - simple path does not invoke expensive reranking
 - existing refusal and citation rules are preserved
 - tests cover routing, multi-hop, and refusal
+
+Phase 2 verification (2026-11-10):
+
+- 58 tests passed with `python -m pytest -q`.
+- LangGraph 1.2.20 and all newly resolved transitive dependencies are pinned.
+- Both synchronous and SSE paths execute the controlled graph.
+- Deterministic routing records `high_risk > multi_hop > simple_fact`
+  decisions and node reasons in `route_trace`.
+- High-risk answers require two distinct cited sources; insufficient evidence
+  refuses with zero citations.
+- Parameterized tests cover all five approved high-risk rule categories.
+- The existing evidence thresholds and year/term coverage rules are reused
+  unchanged through a regression-tested helper.
+- The graph contract is documented in `docs/agentic_v2/GRAPH.md`.
 
 ## Phase 3: Tools and Short-Term Conversation
 

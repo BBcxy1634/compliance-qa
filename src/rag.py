@@ -5,18 +5,15 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import time
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
-from src.config import DEFAULT_CHUNKS_PATH, DEFAULT_TOP_K
-from src.generate import (
-    deepseek_answer,
-    deepseek_answer_stream,
-    extractive_answer,
-    filter_used_citations,
+from src.agent_graph import (
+    GraphDependencies,
+    answer_with_graph,
+    stream_answer_with_graph,
 )
+from src.config import DEFAULT_CHUNKS_PATH, DEFAULT_TOP_K
 from src.retrieve import (
     BM25Retriever,
     BGEVectorRetriever,
@@ -24,15 +21,6 @@ from src.retrieve import (
     HybridRetriever,
     RerankedRetriever,
 )
-from src.schemas import SearchHit
-
-
-@dataclass(frozen=True)
-class RetrievalRun:
-    hits: list[SearchHit]
-    retrieval_ms: float
-    retrieval_breakdown: dict[str, Any]
-    started_at: float
 
 
 def create_retriever(
@@ -70,74 +58,6 @@ def create_retriever(
     raise ValueError(f"Unsupported backend: {backend}")
 
 
-def _retrieve_for_answer(
-    question: str,
-    retriever: (
-        BM25Retriever
-        | BGEVectorRetriever
-        | HybridRetriever
-        | RerankedRetriever
-    ),
-    top_k: int,
-) -> RetrievalRun:
-    started = time.perf_counter()
-    hits = retriever.search(question, top_k=top_k)
-    retrieval_ms = (time.perf_counter() - started) * 1000
-    return RetrievalRun(
-        hits=hits,
-        retrieval_ms=retrieval_ms,
-        retrieval_breakdown=getattr(retriever, "last_timing_ms", {}),
-        started_at=started,
-    )
-
-
-def _finalize_result(
-    result: dict[str, Any],
-    *,
-    question: str,
-    backend: str,
-    thinking: bool,
-    retrieval: RetrievalRun,
-) -> dict[str, Any]:
-    total_ms = (time.perf_counter() - retrieval.started_at) * 1000
-    refused = bool(result.get("refused"))
-    answer = str(result.get("answer", ""))
-    citations = filter_used_citations(
-        answer,
-        list(result.get("citations", [])),
-        refused=refused,
-    )
-    result.update(
-        {
-            "answer": answer,
-            "citations": citations,
-            "refused": refused,
-            "question": question,
-            "backend": backend,
-            "thinking": thinking,
-            "retrieval_ms": round(retrieval.retrieval_ms, 2),
-            "retrieval_breakdown": retrieval.retrieval_breakdown,
-            "generation_ms": round(
-                max(0.0, total_ms - retrieval.retrieval_ms),
-                2,
-            ),
-            "total_ms": round(total_ms, 2),
-            "hits": [
-                {
-                    "score": round(hit.score, 4),
-                    "chunk_id": hit.chunk.get("chunk_id"),
-                    "title": hit.chunk.get("title"),
-                    "source": hit.chunk.get("source"),
-                    "page_label": hit.chunk.get("page_label"),
-                    "text": hit.chunk.get("text"),
-                }
-                for hit in retrieval.hits
-            ],
-        }
-    )
-    return result
-
-
 def answer_with_retriever(
     question: str,
     *,
@@ -153,29 +73,16 @@ def answer_with_retriever(
     thinking: bool = True,
     max_tokens: int | None = None,
 ) -> dict[str, Any]:
-    retrieval = _retrieve_for_answer(question, retriever, top_k)
-    min_score = 0.25 if backend == "bge_m3" else 0.5
-    if mode == "deepseek":
-        result = deepseek_answer(
-            question,
-            retrieval.hits,
-            thinking=thinking,
-            **({"max_tokens": max_tokens} if max_tokens is not None else {}),
-        )
-    else:
-        result = extractive_answer(
-            question,
-            retrieval.hits,
-            min_score=min_score,
-            enforce_term_coverage=backend == "bm25",
+    return answer_with_graph(
+        question,
+        GraphDependencies(
+            retriever=retriever,
             backend=backend,
-        )
-    return _finalize_result(
-        result,
-        question=question,
-        backend=backend,
-        thinking=thinking,
-        retrieval=retrieval,
+            generation_mode="deepseek" if mode == "deepseek" else "extractive",
+            top_k=top_k,
+            thinking=thinking,
+            max_tokens=max_tokens,
+        ),
     )
 
 
@@ -193,40 +100,19 @@ def stream_answer_with_retriever(
     thinking: bool = True,
     max_tokens: int | None = None,
 ) -> Iterator[dict[str, Any]]:
-    """Stream the DeepSeek answer through the existing RAG orchestration."""
-    yield {"event": "status", "data": {"stage": "retrieving"}}
-    retrieval = _retrieve_for_answer(question, retriever, top_k)
-    yield {"event": "status", "data": {"stage": "generating"}}
-
-    result: dict[str, Any] | None = None
-    stream = deepseek_answer_stream(
+    """Stream the controlled graph's answer events."""
+    yield from stream_answer_with_graph(
         question,
-        retrieval.hits,
-        thinking=thinking,
-        **({"max_tokens": max_tokens} if max_tokens is not None else {}),
-    )
-    for item in stream:
-        if item.get("type") == "token":
-            yield {
-                "event": "token",
-                "data": {"delta": str(item.get("delta", ""))},
-            }
-        elif item.get("type") == "result":
-            result = dict(item.get("result", {}))
-    if result is None:
-        raise RuntimeError("Streaming generation ended without a final result.")
-
-    yield {"event": "status", "data": {"stage": "verifying_citations"}}
-    yield {
-        "event": "done",
-        "data": _finalize_result(
-            result,
-            question=question,
+        GraphDependencies(
+            retriever=retriever,
             backend=backend,
+            generation_mode="deepseek",
+            top_k=top_k,
             thinking=thinking,
-            retrieval=retrieval,
+            max_tokens=max_tokens,
+            stream_tokens=True,
         ),
-    }
+    )
 
 
 def answer_question(

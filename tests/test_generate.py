@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import src.generate as generate
+import src.agent_graph as agent_graph
 import src.rag as rag
 from src.schemas import SearchHit
 
@@ -37,6 +38,53 @@ def _hits() -> list[SearchHit]:
             score=0.8,
         ),
     ]
+
+
+def test_evidence_assessment_preserves_score_thresholds() -> None:
+    question = "Amazon review policy"
+    weak = SearchHit(
+        chunk={"text": "Amazon review policy requirements"},
+        score=0.2,
+    )
+    strong = SearchHit(
+        chunk={"text": "Amazon review policy requirements"},
+        score=0.8,
+    )
+
+    weak_result = generate.assess_evidence(
+        question,
+        [weak],
+        min_score=0.25,
+        backend="bge_m3",
+    )
+    strong_result = generate.assess_evidence(
+        question,
+        [strong],
+        min_score=0.25,
+        backend="bge_m3",
+    )
+
+    assert weak_result.sufficient is False
+    assert weak_result.reason == "no_strong_hits"
+    assert weak_result.strong_hits == []
+    assert strong_result.sufficient is True
+    assert strong_result.strong_hits == [strong]
+
+
+def test_evidence_assessment_preserves_year_coverage_rule() -> None:
+    hit = SearchHit(
+        chunk={"text": "Policy updated in 2024 for sellers"},
+        score=1.0,
+    )
+    result = generate.assess_evidence(
+        "Policy updated in 2026 for sellers",
+        [hit],
+        min_score=0.5,
+        backend="bm25",
+    )
+
+    assert result.sufficient is False
+    assert result.reason == "query_year_not_covered"
 
 
 def test_deepseek_stream_yields_deltas_and_filters_done_citations(
@@ -134,7 +182,7 @@ def test_rag_stream_uses_shared_retrieval_and_emits_contract_events(
             },
         }
 
-    monkeypatch.setattr(rag, "deepseek_answer_stream", fake_stream)
+    monkeypatch.setattr(agent_graph, "deepseek_answer_stream", fake_stream)
     retriever = FakeRetriever()
     events = list(
         rag.stream_answer_with_retriever(

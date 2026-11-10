@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Any, Iterator
 
 from src.config import (
@@ -38,6 +39,13 @@ class ModelGenerationError(RuntimeError):
     """Public generation failure without provider-specific details."""
 
 
+@dataclass
+class EvidenceAssessment:
+    sufficient: bool
+    strong_hits: list[SearchHit]
+    reason: str
+
+
 def _citation(chunk: dict[str, Any]) -> dict[str, Any]:
     page = chunk.get("page")
     if page is None:
@@ -48,6 +56,7 @@ def _citation(chunk: dict[str, Any]) -> dict[str, Any]:
         location = f"第 {page} 页"
     return {
         "title": chunk.get("title", chunk.get("source", "")),
+        "source_id": chunk.get("source_id", ""),
         "source": chunk.get("source", ""),
         "location": location,
         "url": chunk.get("url", ""),
@@ -85,6 +94,56 @@ def _candidate_sentences(text: str) -> list[str]:
     return candidates
 
 
+def assess_evidence(
+    question: str,
+    hits: list[SearchHit],
+    *,
+    max_hits: int = 3,
+    min_score: float = 0.5,
+    enforce_term_coverage: bool = True,
+    backend: str = "bm25",
+) -> EvidenceAssessment:
+    """Apply the existing extractive evidence rules without generating text."""
+    strong_hits = [hit for hit in hits if hit.score >= min_score][:max_hits]
+    query_tokens = set(tokenize(question))
+    combined_text = "\n".join(hit.chunk["text"] for hit in strong_hits)
+    hit_tokens = set(tokenize(combined_text))
+    matched_tokens = query_tokens.intersection(hit_tokens)
+    query_years = set(re.findall(r"(?:19|20)\d{2}", question))
+    years_covered = True
+    if backend == "bge_m3" and strong_hits:
+        top_text = strong_hits[0].chunk["text"]
+        top_tokens = set(tokenize(top_text))
+        top_years = set(re.findall(r"(?:19|20)\d{2}", top_text))
+        coverage_ok = strong_hits[0].score >= 0.65 or len(
+            query_tokens.intersection(top_tokens)
+        ) >= 2
+        if query_years and not query_years.issubset(top_years):
+            coverage_ok = False
+            years_covered = False
+    else:
+        hit_years = set(re.findall(r"(?:19|20)\d{2}", combined_text))
+        coverage_ok = (
+            len(matched_tokens) >= 2
+            if len(query_tokens) > 1
+            else bool(matched_tokens)
+        )
+        if query_years and not query_years.issubset(hit_years):
+            coverage_ok = False
+            years_covered = False
+    requires_coverage = backend == "bge_m3" or enforce_term_coverage
+    if not strong_hits:
+        return EvidenceAssessment(False, strong_hits, "no_strong_hits")
+    if requires_coverage and not coverage_ok:
+        reason = (
+            "query_year_not_covered"
+            if not years_covered
+            else "term_coverage_missing"
+        )
+        return EvidenceAssessment(False, strong_hits, reason)
+    return EvidenceAssessment(True, strong_hits, "sufficient")
+
+
 def extractive_answer(
     question: str,
     hits: list[SearchHit],
@@ -95,32 +154,17 @@ def extractive_answer(
     backend: str = "bm25",
 ) -> dict[str, Any]:
     """Build a grounded answer without calling an external model."""
-    strong_hits = [hit for hit in hits if hit.score >= min_score][:max_hits]
+    assessment = assess_evidence(
+        question,
+        hits,
+        max_hits=max_hits,
+        min_score=min_score,
+        enforce_term_coverage=enforce_term_coverage,
+        backend=backend,
+    )
+    strong_hits = assessment.strong_hits
     query_tokens = set(tokenize(question))
-    combined_text = "\n".join(hit.chunk["text"] for hit in strong_hits)
-    hit_tokens = set(tokenize(combined_text))
-    matched_tokens = query_tokens.intersection(hit_tokens)
-    query_years = set(re.findall(r"(?:19|20)\d{2}", question))
-    if backend == "bge_m3" and strong_hits:
-        top_text = strong_hits[0].chunk["text"]
-        top_tokens = set(tokenize(top_text))
-        top_years = set(re.findall(r"(?:19|20)\d{2}", top_text))
-        coverage_ok = strong_hits[0].score >= 0.65 or len(
-            query_tokens.intersection(top_tokens)
-        ) >= 2
-        if query_years and not query_years.issubset(top_years):
-            coverage_ok = False
-    else:
-        hit_years = set(re.findall(r"(?:19|20)\d{2}", combined_text))
-        coverage_ok = (
-            len(matched_tokens) >= 2
-            if len(query_tokens) > 1
-            else bool(matched_tokens)
-        )
-        if query_years and not query_years.issubset(hit_years):
-            coverage_ok = False
-    requires_coverage = backend == "bge_m3" or enforce_term_coverage
-    if not strong_hits or (requires_coverage and not coverage_ok):
+    if not assessment.sufficient:
         return {
             "answer": REFUSAL_TEXT,
             "citations": [],
