@@ -2,8 +2,8 @@
 
 FastAPI exposes the existing B1 Fast and B3 RAG paths through FastAPI. Both the
 synchronous and SSE endpoints run the controlled LangGraph state machine
-documented in `docs/agentic_v2/GRAPH.md`. The default mode is `fast`. Neither
-endpoint calls tools.
+documented in `docs/agentic_v2/GRAPH.md`. The default mode is `fast`. The graph
+uses the bounded tools documented in `docs/agentic_v2/TOOLS.md`.
 
 Run locally:
 
@@ -24,6 +24,13 @@ Both answer endpoints accept:
 
 - `question`: 1 to 2000 characters after trimming.
 - `mode`: `fast` (default) or `high`.
+- Optional header `X-Session-ID`: 1 to 128 characters using letters, numbers,
+  `.`, `_`, `:`, or `-`.
+
+When the header is omitted, the request is stateless and receives no prior
+conversation context. When supplied, the same process-local session can reuse
+up to four recent turns and a bounded summary of older turns. Session context
+is never returned in the JSON response or SSE payload.
 
 ## Endpoints
 
@@ -80,3 +87,7 @@ The events appear in this order:
 Candidate citations are never sent before `done`. If an error occurs after the
 stream starts, an `error` event replaces `done`. Error payloads do not include
 stack traces, API keys, environment values, or other internal configuration.
+
+Tool failure uses the existing `error` event with public code
+`tool_unavailable`. The event order remains `start`, optionally `status`, and
+then either `done` or `error`.

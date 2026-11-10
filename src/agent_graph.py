@@ -20,6 +20,17 @@ from src.generate import (
     filter_used_citations,
 )
 from src.schemas import SearchHit
+from src.tools import (
+    CompareVersionsInput,
+    InspectSnapshotInput,
+    SearchSourcesInput,
+    ToolExecutionError,
+    ToolFailure,
+    ToolRuntime,
+    ToolSuccess,
+    ValidateValidityPeriodInput,
+    extract_date_ranges,
+)
 
 
 RouteName = Literal["high_risk", "multi_hop", "simple_fact"]
@@ -39,8 +50,11 @@ class RouteDecision(TypedDict):
 
 class AgentState(TypedDict, total=False):
     question: str
+    contextual_question: str
+    conversation_context: dict[str, Any]
     route: RouteDecision
     route_trace: list[dict[str, Any]]
+    tool_calls: list[dict[str, Any]]
     retrieval_queries: list[str]
     retrieval_results: list[dict[str, Any]]
     evidence_hits: list[dict[str, Any]]
@@ -68,6 +82,7 @@ class GraphDependencies:
     thinking: bool = True
     max_tokens: int | None = DEEPSEEK_MAX_TOKENS
     stream_tokens: bool = False
+    tool_runtime: ToolRuntime | None = None
 
 
 HIGH_RISK_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -131,6 +146,11 @@ MULTI_HOP_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
 SPLIT_PATTERN = re.compile(
     r"(?:[;；]|(?<=[？?])\s*|\s+(?:and|plus|while|as well as)\s+|"
     r"以及|同时|并且|分别|对比|相比)",
+    re.IGNORECASE,
+)
+FOLLOW_UP_PATTERN = re.compile(
+    r"^(?:那|那么|这个|上述|它|其中|还有|另外|如果|对应|相关|"
+    r"what about|how about|and\b|what if)|(?:呢|怎么样)[？?]?$",
     re.IGNORECASE,
 )
 
@@ -197,6 +217,20 @@ def _split_queries(question: str, decision: RouteDecision) -> list[str]:
     return queries[:3] or [question]
 
 
+def _contextual_question(
+    question: str,
+    conversation_context: dict[str, Any],
+) -> str:
+    recent_turns = list(conversation_context.get("recent_turns", []))
+    if not recent_turns or not FOLLOW_UP_PATTERN.search(question):
+        return question
+    previous_question = str(recent_turns[-1].get("question", "")).strip()
+    if not previous_question:
+        return question
+    previous_question = previous_question.rstrip("?？")
+    return f"{previous_question} {question}"
+
+
 def _append_trace(
     state: AgentState,
     node: str,
@@ -238,10 +272,77 @@ def _min_score(backend: str) -> float:
     return 0.25 if backend == "bge_m3" else 0.5
 
 
+def _tool_trace(outcome: ToolSuccess | ToolFailure) -> dict[str, Any]:
+    trace = outcome.to_state()
+    if isinstance(outcome, ToolSuccess):
+        if outcome.tool == "search_official_policy_sources":
+            trace["output_summary"] = {
+                "query": outcome.output.get("query", ""),
+                "hit_count": len(outcome.output.get("hits", [])),
+            }
+        else:
+            trace["output_summary"] = dict(outcome.output)
+        trace.pop("output", None)
+    return trace
+
+
+def _metadata_tool_calls(
+    state: AgentState,
+    runtime: ToolRuntime,
+    evidence_hits: list[dict[str, Any]],
+    calls: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    if not evidence_hits:
+        return calls
+    source_id = _source_key(evidence_hits[0]["chunk"])
+    question = state.get("contextual_question", state["question"])
+
+    if runtime.snapshot_catalog is not None and source_id:
+        latest = runtime.inspect_latest_snapshot(
+            InspectSnapshotInput(source_id=source_id)
+        )
+        calls.append(_tool_trace(latest))
+
+    if (
+        runtime.snapshot_catalog is not None
+        and source_id
+        and re.search(
+            r"比较|对比|差异|版本|旧版|新版|修订|变更|"
+            r"\bversion\b|\brevision\b",
+            question,
+            re.IGNORECASE,
+        )
+    ):
+        comparison = runtime.compare_policy_versions(
+            CompareVersionsInput(source_id=source_id)
+        )
+        calls.append(_tool_trace(comparison))
+
+    date_ranges = extract_date_ranges(question)
+    if date_ranges:
+        start_date, end_date = date_ranges[0]
+        validation = runtime.validate_validity_period(
+            ValidateValidityPeriodInput(
+                start_date=start_date,
+                end_date=end_date,
+                as_of=runtime.today,
+            )
+        )
+        calls.append(_tool_trace(validation))
+    return calls
+
+
 def build_agent_graph(deps: GraphDependencies):
+    tool_runtime = deps.tool_runtime or ToolRuntime(deps.retriever)
+
     def classify_question(state: AgentState) -> AgentState:
-        decision = classify_route(state["question"], deps.backend)
+        contextual_question = _contextual_question(
+            state["question"],
+            state.get("conversation_context", {}),
+        )
+        decision = classify_route(contextual_question, deps.backend)
         return {
+            "contextual_question": contextual_question,
             "route": decision,
             "route_trace": _append_trace(
                 state,
@@ -249,11 +350,21 @@ def build_agent_graph(deps: GraphDependencies):
                 route=decision["route"],
                 rules=decision["reasons"],
                 required_source_count=decision["required_source_count"],
+                context_turn_count=len(
+                    state.get("conversation_context", {}).get(
+                        "recent_turns",
+                        [],
+                    )
+                ),
+                context_expanded=contextual_question != state["question"],
             ),
         }
 
     def rewrite_or_split_query(state: AgentState) -> AgentState:
-        queries = _split_queries(state["question"], state["route"])
+        queries = _split_queries(
+            state.get("contextual_question", state["question"]),
+            state["route"],
+        )
         return {
             "retrieval_queries": queries,
             "route_trace": _append_trace(
@@ -270,13 +381,22 @@ def build_agent_graph(deps: GraphDependencies):
         started = time.perf_counter()
         retrieval_results: list[dict[str, Any]] = []
         query_timings: list[dict[str, Any]] = []
+        tool_calls = list(state.get("tool_calls", []))
         merged: dict[str, dict[str, Any]] = {}
         fallback_index = 0
         for query in state["retrieval_queries"]:
             query_started = time.perf_counter()
-            hits = deps.retriever.search(query, top_k=deps.top_k)
+            outcome = tool_runtime.search_sources(
+                SearchSourcesInput(query=query, top_k=deps.top_k)
+            )
+            tool_calls.append(_tool_trace(outcome))
+            if isinstance(outcome, ToolFailure):
+                raise ToolExecutionError(outcome.tool, outcome.code)
             query_ms = (time.perf_counter() - query_started) * 1000
-            hit_dicts = [_hit_to_dict(hit) for hit in hits]
+            hit_dicts = [
+                dict(item)
+                for item in outcome.output.get("hits", [])
+            ]
             retrieval_results.append({"query": query, "hits": hit_dicts})
             query_timings.append(
                 {
@@ -296,6 +416,12 @@ def build_agent_graph(deps: GraphDependencies):
             key=lambda item: item["score"],
             reverse=True,
         )
+        tool_calls = _metadata_tool_calls(
+            state,
+            tool_runtime,
+            evidence_hits,
+            tool_calls,
+        )
         retrieval_ms = (time.perf_counter() - started) * 1000
         retrieval_breakdown = dict(
             getattr(deps.retriever, "last_timing_ms", {})
@@ -306,11 +432,16 @@ def build_agent_graph(deps: GraphDependencies):
             "evidence_hits": evidence_hits,
             "retrieval_ms": round(retrieval_ms, 2),
             "retrieval_breakdown": retrieval_breakdown,
+            "tool_calls": tool_calls,
             "route_trace": _append_trace(
                 state,
                 "retrieve_evidence",
                 query_count=len(state["retrieval_queries"]),
                 merged_hit_count=len(evidence_hits),
+                tool_names=[item["tool"] for item in tool_calls],
+                tool_failure_count=sum(
+                    1 for item in tool_calls if not item["ok"]
+                ),
                 retrieval_ms=round(retrieval_ms, 2),
             ),
         }
@@ -385,6 +516,7 @@ def build_agent_graph(deps: GraphDependencies):
         hits = [_hit_from_dict(item) for item in state["evidence_hits"]]
         kwargs = {
             "thinking": deps.thinking,
+            "conversation_context": state.get("conversation_context", {}),
             **(
                 {"max_tokens": deps.max_tokens}
                 if deps.max_tokens is not None
@@ -577,6 +709,7 @@ def _finalize_state(
             "route": state["route"]["route"],
             "route_decision": dict(state["route"]),
             "route_trace": list(state.get("route_trace", [])),
+            "tool_calls": list(state.get("tool_calls", [])),
         }
     )
     return result
@@ -585,10 +718,17 @@ def _finalize_state(
 def answer_with_graph(
     question: str,
     deps: GraphDependencies,
+    *,
+    conversation_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     state = build_agent_graph(deps).invoke(
-        {"question": question, "route_trace": []}
+        {
+            "question": question,
+            "route_trace": [],
+            "tool_calls": [],
+            "conversation_context": dict(conversation_context or {}),
+        }
     )
     total_ms = (time.perf_counter() - started) * 1000
     return _finalize_state(state, deps, total_ms=total_ms)
@@ -597,12 +737,19 @@ def answer_with_graph(
 def stream_answer_with_graph(
     question: str,
     deps: GraphDependencies,
+    *,
+    conversation_context: dict[str, Any] | None = None,
 ) -> Iterator[dict[str, Any]]:
     started = time.perf_counter()
     final_state: AgentState = {}
     graph = build_agent_graph(deps)
     for mode, data in graph.stream(
-        {"question": question, "route_trace": []},
+        {
+            "question": question,
+            "route_trace": [],
+            "tool_calls": [],
+            "conversation_context": dict(conversation_context or {}),
+        },
         stream_mode=["custom", "values"],
     ):
         if mode == "custom":

@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from typing import Any, Literal, Protocol
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -16,6 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.demo import DemoEngine
 from src.generate import ModelGenerationError, filter_used_citations
+from src.tools import ToolExecutionError
 
 
 class AnswerRequest(BaseModel):
@@ -66,17 +67,54 @@ class HealthResponse(BaseModel):
 
 
 class AnswerEngine(Protocol):
-    def ask(self, question: str, mode_key: str) -> dict[str, Any]: ...
+    def ask(
+        self,
+        question: str,
+        mode_key: str,
+        session_id: str | None = None,
+    ) -> dict[str, Any]: ...
 
     def stream_ask(
         self,
         question: str,
         mode_key: str,
+        session_id: str | None = None,
     ) -> Iterator[dict[str, Any]]: ...
 
 
 def _request_id() -> str:
     return f"req_{uuid4().hex}"
+
+
+def _normalize_session_id(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not normalized or len(normalized) > 128:
+        raise ValueError("Invalid session id.")
+    if not re.fullmatch(r"[A-Za-z0-9._:-]+", normalized):
+        raise ValueError("Invalid session id.")
+    return normalized
+
+
+def _ask_engine(
+    engine: AnswerEngine,
+    request: AnswerRequest,
+    session_id: str | None,
+) -> dict[str, Any]:
+    if session_id is None:
+        return engine.ask(request.question, request.mode)
+    return engine.ask(request.question, request.mode, session_id)
+
+
+def _stream_engine(
+    engine: AnswerEngine,
+    request: AnswerRequest,
+    session_id: str | None,
+) -> Iterator[dict[str, Any]]:
+    if session_id is None:
+        return engine.stream_ask(request.question, request.mode)
+    return engine.stream_ask(request.question, request.mode, session_id)
 
 
 def _timings(result: dict[str, Any]) -> TimingsResponse:
@@ -129,6 +167,8 @@ def _public_error(exc: Exception) -> tuple[int, str, str]:
         return 400, "invalid_request", "请求参数无效。"
     if isinstance(exc, FileNotFoundError):
         return 503, "data_unavailable", "知识库数据暂时不可用。"
+    if isinstance(exc, ToolExecutionError):
+        return 503, "tool_unavailable", "合规工具暂时不可用。"
     if isinstance(exc, ModelGenerationError):
         return 502, "model_error", "生成模型暂时不可用。"
     return 500, "internal_error", "服务暂时无法处理请求。"
@@ -155,6 +195,7 @@ def _stream_response(
     engine: AnswerEngine,
     request: AnswerRequest,
     request_id: str,
+    session_id: str | None,
 ) -> Iterator[str]:
     yield _sse(
         "start",
@@ -165,7 +206,7 @@ def _stream_response(
         },
     )
     try:
-        events = engine.stream_ask(request.question, request.mode)
+        events = _stream_engine(engine, request, session_id)
         for item in events:
             event = str(item.get("event", ""))
             data = dict(item.get("data") or {})
@@ -239,10 +280,17 @@ def create_app(engine: AnswerEngine) -> FastAPI:
         return HealthResponse(status="ok")
 
     @app.post("/api/v1/answer", response_model=AnswerResponse)
-    def answer(request: AnswerRequest) -> AnswerResponse:
+    def answer(
+        request: AnswerRequest,
+        x_session_id: str | None = Header(
+            default=None,
+            alias="X-Session-ID",
+        ),
+    ) -> AnswerResponse:
         request_id = _request_id()
         try:
-            result = engine.ask(request.question, request.mode)
+            session_id = _normalize_session_id(x_session_id)
+            result = _ask_engine(engine, request, session_id)
         except Exception as exc:
             _raise_http_error(exc)
         return _answer_response(request_id, request.mode, result)
@@ -260,10 +308,20 @@ def create_app(engine: AnswerEngine) -> FastAPI:
             }
         },
     )
-    def answer_stream(request: AnswerRequest) -> StreamingResponse:
+    def answer_stream(
+        request: AnswerRequest,
+        x_session_id: str | None = Header(
+            default=None,
+            alias="X-Session-ID",
+        ),
+    ) -> StreamingResponse:
         request_id = _request_id()
+        try:
+            session_id = _normalize_session_id(x_session_id)
+        except Exception as exc:
+            _raise_http_error(exc)
         return StreamingResponse(
-            _stream_response(engine, request, request_id),
+            _stream_response(engine, request, request_id, session_id),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",

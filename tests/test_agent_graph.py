@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from typing import Any
 
 import pytest
@@ -17,6 +18,7 @@ from src.agent_graph import (
 )
 from src.generate import REFUSAL_TEXT
 from src.schemas import SearchHit
+from src.tools import ToolExecutionError, ToolRuntime
 
 
 class StubRetriever:
@@ -35,6 +37,15 @@ class StubRetriever:
         assert top_k == 5
         self.questions.append(query)
         return self.hits_by_query.get(query, self.default_hits)
+
+
+class FailingRetriever:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def search(self, query: str, *, top_k: int) -> list[SearchHit]:
+        self.calls += 1
+        raise TimeoutError(query)
 
 
 def _hit(
@@ -81,7 +92,11 @@ def _generated(
     }
 
 
-def _dependencies(retriever: StubRetriever) -> GraphDependencies:
+def _dependencies(
+    retriever: StubRetriever | FailingRetriever,
+    *,
+    tool_runtime: ToolRuntime | None = None,
+) -> GraphDependencies:
     return GraphDependencies(
         retriever=retriever,
         backend="bge_m3",
@@ -89,6 +104,7 @@ def _dependencies(retriever: StubRetriever) -> GraphDependencies:
         top_k=5,
         thinking=False,
         max_tokens=600,
+        tool_runtime=tool_runtime,
     )
 
 
@@ -143,6 +159,10 @@ def test_simple_fact_uses_fast_route_and_records_decisions(
     assert [item["citation_id"] for item in result["citations"]] == ["C1"]
     assert result["retrieval_breakdown"]["stub_ms"] == 1.0
     assert result["retrieval_breakdown"]["queries"][0]["hit_count"] == 1
+    assert result["tool_calls"][0]["tool"] == (
+        "search_official_policy_sources"
+    )
+    assert result["tool_calls"][0]["ok"] is True
 
 
 def test_multi_hop_question_is_split_without_reranking(
@@ -309,6 +329,97 @@ def test_graph_state_is_json_serializable_and_records_route(
     assert '"route": "simple_fact"' in payload
     assert state["route"]["route"] == "simple_fact"
     assert state["route_trace"][0]["route"] == "simple_fact"
+
+
+def test_core_tool_failure_stops_generation_after_bounded_retries(
+    monkeypatch,
+) -> None:
+    retriever = FailingRetriever()
+    runtime = ToolRuntime(retriever, max_attempts=2)
+    monkeypatch.setattr(
+        agent_graph,
+        "deepseek_answer",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("generation must not run after a tool failure")
+        ),
+    )
+
+    with pytest.raises(ToolExecutionError) as exc_info:
+        answer_with_graph(
+            "Simple policy question?",
+            _dependencies(retriever, tool_runtime=runtime),
+        )
+
+    assert exc_info.value.code == "timeout"
+    assert retriever.calls == 2
+
+
+def test_date_validation_tool_is_recorded_in_graph_trace(
+    monkeypatch,
+) -> None:
+    question = (
+        "2026年1月1日至2027年12月31日期间，"
+        "跨境出口退运税收优惠的适用条件是什么？"
+    )
+    retriever = StubRetriever(default_hits=[_hit("source-1")])
+    runtime = ToolRuntime(
+        retriever,
+        max_attempts=2,
+        today=date(2026, 11, 10),
+    )
+    monkeypatch.setattr(
+        agent_graph,
+        "deepseek_answer",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("high-risk single-source answer must refuse")
+        ),
+    )
+
+    result = answer_with_graph(
+        question,
+        _dependencies(retriever, tool_runtime=runtime),
+    )
+
+    date_call = next(
+        item
+        for item in result["tool_calls"]
+        if item["tool"] == "validate_validity_period"
+    )
+    assert date_call["ok"] is True
+    assert date_call["output_summary"]["status"] == "active"
+
+
+def test_conversation_context_reaches_generation(
+    monkeypatch,
+) -> None:
+    retriever = StubRetriever(default_hits=[_hit("source-1")])
+    captured: dict[str, Any] = {}
+    context = {
+        "summary": "Seller sells in the US.",
+        "recent_turns": [
+            {
+                "question": "US policy?",
+                "answer": "US answer [C1]",
+                "refused": False,
+            }
+        ],
+    }
+
+    def fake_answer(_question, _hits, **kwargs):
+        captured["conversation_context"] = kwargs.get(
+            "conversation_context"
+        )
+        return _generated("Answer [C1].", "source-1")
+
+    monkeypatch.setattr(agent_graph, "deepseek_answer", fake_answer)
+    answer_with_graph(
+        "What about returns?",
+        _dependencies(retriever),
+        conversation_context=context,
+    )
+
+    assert captured["conversation_context"] == context
+    assert retriever.questions == ["US policy What about returns?"]
 
 
 def test_custom_stream_preserves_event_order_and_tokens(

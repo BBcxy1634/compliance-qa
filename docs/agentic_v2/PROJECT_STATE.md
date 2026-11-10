@@ -10,8 +10,8 @@ Last updated: 2026-11-10
 | Current branch | `feat/agentic-v2` |
 | Base release | `v1.0.0` |
 | Base commit | `1ea2f4b9161b921d126466f86e69782bec9b34b1` |
-| Current V2 phase | Phase 2: LangGraph state machine and routing complete |
-| V2 code status | Phase 2 complete |
+| Current V2 phase | Phase 3: tools and short-term conversation complete |
+| V2 code status | Phase 3 complete |
 | Current release state | v1.0.0 remains the released version |
 
 ## V2 Goal
@@ -69,10 +69,12 @@ PPT / HTML / PDF
   -> optional BM25 + RRF
   -> optional BGE reranker
   -> controlled LangGraph routing
+  -> bounded typed tool calls
   -> evidence assessment
   -> DeepSeek or extractive generation
   -> citation verification or refusal
-  -> Gradio UI / CLI
+  -> Gradio UI / CLI / FastAPI
+  -> bounded per-session context
 ```
 
 Important existing modules:
@@ -85,6 +87,8 @@ Important existing modules:
 | `src/generate.py` | extractive and DeepSeek generation |
 | `src/agent_graph.py` | serializable state, deterministic routing, six-node graph |
 | `src/rag.py` | CLI plus graph adapters for synchronous and streaming answers |
+| `src/tools.py` | typed tool runtime, snapshot catalog, bounded retries |
+| `src/conversation.py` | bounded process-local short-term session context |
 | `app.py` | Gradio demo |
 | `src/demo.py` | demo modes, HTML rendering, citation filtering |
 | `src/api.py` | FastAPI models, synchronous answer endpoint, and SSE streaming |
@@ -159,11 +163,39 @@ Results:
 - The graph state and SSE mapping are documented in
   `docs/agentic_v2/GRAPH.md`.
 
+## Phase 3 Verification
+
+Validation performed on 2026-11-10:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe scripts/check_environment.py --require-data
+```
+
+Results:
+
+- 80 tests passed.
+- Typed search, latest-snapshot inspection, version comparison, and validity
+  period tools are implemented.
+- Tool success and stable failure results are JSON serializable and covered by
+  deterministic tests.
+- Tool retries are capped at three total attempts; the default is two.
+- Core search-tool exhaustion maps to public `tool_unavailable` through the
+  existing API error and SSE `error` channels.
+- Short-term context is process-local, bounded to 128 sessions and four recent
+  turns, with older turns compacted into a deterministic summary.
+- Missing `X-Session-ID` remains stateless; distinct session IDs are isolated.
+- Current source data has one snapshot per `source_id`, so real version
+  comparison returns `insufficient_versions` instead of inventing differences.
+- Existing route, refusal, citation filtering, high-risk, CLI, Gradio, API, and
+  SSE tests remain green.
+- Tool and session contracts are documented in
+  `docs/agentic_v2/TOOLS.md`.
+
 ## Current Gaps
 
-- No tool-calling layer or tool failure handling.
-- No short-term conversation state.
-- No policy-version or date-validation tools.
+- No historical policy snapshot corpus, so real cross-version comparison is not
+  yet available.
 - No Langfuse or equivalent trace.
 - No routing accuracy, tool success, or evidence sufficiency metrics.
 - No Docker-based service composition.
@@ -172,7 +204,7 @@ Results:
 
 ## Current Phase and Next Task
 
-Phase 2 is complete. The FastAPI application exposes:
+Phase 3 is complete. The FastAPI application exposes:
 
 - `GET /health`
 - `POST /api/v1/answer`
@@ -184,12 +216,13 @@ incremental token deltas. The `done` event contains only citations whose IDs
 occur in the complete answer body. Refusals always return `refused=true` and no
 citations.
 
-The next task is **Phase 3: Tools and Short-Term Conversation**, which is not
-started. Do not add tools or conversation memory until that phase explicitly
-starts.
+The next task is **Phase 4: Evaluation and Observability**, which is not
+started. Do not change evaluation metrics or add observability infrastructure
+until that phase explicitly starts.
 
 The API contract is documented in `docs/agentic_v2/API.md`. The graph contract
-is documented in `docs/agentic_v2/GRAPH.md`.
+is documented in `docs/agentic_v2/GRAPH.md`. Tool and session contracts are
+documented in `docs/agentic_v2/TOOLS.md`.
 
 ## Environment and Data Rules
 

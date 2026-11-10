@@ -231,12 +231,47 @@ def build_context(hits: list[SearchHit]) -> str:
     return "\n\n".join(blocks)
 
 
-def _deepseek_messages(question: str, hits: list[SearchHit]) -> list[dict[str, str]]:
+def _conversation_prompt_block(
+    conversation_context: dict[str, Any] | None,
+) -> str:
+    if not conversation_context:
+        return ""
+    summary = str(conversation_context.get("summary", "")).strip()
+    recent_turns = list(conversation_context.get("recent_turns", []))
+    if not summary and not recent_turns:
+        return ""
+    lines = [
+        "会话上下文（仅用于理解追问和指代；不能作为事实依据，"
+        "事实仍必须来自本次检索片段）："
+    ]
+    if summary:
+        lines.append(f"较早会话摘要：{summary}")
+    for turn in recent_turns[-4:]:
+        outcome = "拒答" if turn.get("refused") else "回答"
+        lines.append(
+            f"上一轮用户：{str(turn.get('question', ''))[:300]}"
+        )
+        lines.append(
+            f"上一轮助手（{outcome}）：{str(turn.get('answer', ''))[:500]}"
+        )
+    return "\n".join(lines)
+
+
+def _deepseek_messages(
+    question: str,
+    hits: list[SearchHit],
+    conversation_context: dict[str, Any] | None = None,
+) -> list[dict[str, str]]:
+    context_block = _conversation_prompt_block(conversation_context)
+    context_section = f"\n\n{context_block}" if context_block else ""
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
         {
             "role": "user",
-            "content": f"问题：{question}\n\n检索片段：\n{build_context(hits)}",
+            "content": (
+                f"问题：{question}"
+                f"{context_section}\n\n检索片段：\n{build_context(hits)}"
+            ),
         },
     ]
 
@@ -307,6 +342,7 @@ def deepseek_answer(
     *,
     thinking: bool = True,
     max_tokens: int = DEEPSEEK_MAX_TOKENS,
+    conversation_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Generate an answer through the DeepSeek OpenAI-compatible API."""
     client = _deepseek_client()
@@ -316,7 +352,11 @@ def deepseek_answer(
             temperature=0,
             max_tokens=max_tokens,
             extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
-            messages=_deepseek_messages(question, hits),
+            messages=_deepseek_messages(
+                question,
+                hits,
+                conversation_context,
+            ),
         )
     except Exception as exc:
         raise ModelGenerationError("The model request failed.") from exc
@@ -337,6 +377,7 @@ def deepseek_answer_stream(
     *,
     thinking: bool = True,
     max_tokens: int = DEEPSEEK_MAX_TOKENS,
+    conversation_context: dict[str, Any] | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Yield answer deltas, followed by the finalized non-stream result."""
     client = _deepseek_client()
@@ -348,7 +389,11 @@ def deepseek_answer_stream(
             stream=True,
             stream_options={"include_usage": True},
             extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
-            messages=_deepseek_messages(question, hits),
+            messages=_deepseek_messages(
+                question,
+                hits,
+                conversation_context,
+            ),
         )
     except Exception as exc:
         raise ModelGenerationError("The model request failed.") from exc

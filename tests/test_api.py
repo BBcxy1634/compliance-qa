@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from src.api import create_app
 from src.generate import ModelGenerationError
+from src.tools import ToolExecutionError
 
 
 def _result(
@@ -71,14 +72,28 @@ class StubEngine:
         self.stream_error = stream_error
         self.sync_error = sync_error
         self.stream_inputs: list[tuple[str, str]] = []
+        self.sync_sessions: list[str | None] = []
+        self.stream_sessions: list[str | None] = []
 
-    def ask(self, question: str, mode_key: str) -> dict[str, Any]:
+    def ask(
+        self,
+        question: str,
+        mode_key: str,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        self.sync_sessions.append(session_id)
         if self.sync_error:
             raise self.sync_error
         return self.result
 
-    def stream_ask(self, question: str, mode_key: str):
+    def stream_ask(
+        self,
+        question: str,
+        mode_key: str,
+        session_id: str | None = None,
+    ):
         self.stream_inputs.append((question, mode_key))
+        self.stream_sessions.append(session_id)
         if self.stream_error:
             raise self.stream_error
         return iter(self.stream_events or [])
@@ -115,6 +130,50 @@ def test_sync_answer_filters_unused_candidate_citations() -> None:
     assert [item["citation_id"] for item in payload["citations"]] == ["C1", "C3"]
     assert payload["timings"]["total_ms"] == 31.0
     assert payload["usage"]["total_tokens"] == 20
+
+
+def test_optional_session_header_is_passed_without_changing_response() -> None:
+    engine = StubEngine()
+    client = TestClient(create_app(engine))
+
+    response = client.post(
+        "/api/v1/answer",
+        headers={"X-Session-ID": "seller-session-1"},
+        json={"question": "测试问题", "mode": "fast"},
+    )
+
+    assert response.status_code == 200
+    assert engine.sync_sessions == ["seller-session-1"]
+    assert set(response.json()) == {
+        "request_id",
+        "mode",
+        "answer",
+        "refused",
+        "citations",
+        "model",
+        "timings",
+        "usage",
+    }
+
+
+def test_invalid_session_header_has_stable_error_shape() -> None:
+    engine = StubEngine()
+    client = TestClient(create_app(engine))
+
+    response = client.post(
+        "/api/v1/answer",
+        headers={"X-Session-ID": "bad session"},
+        json={"question": "测试问题"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "error": {
+            "code": "invalid_request",
+            "message": "请求参数无效。",
+        }
+    }
+    assert engine.sync_sessions == []
 
 
 def test_sync_refusal_has_no_citations() -> None:
@@ -220,6 +279,41 @@ def test_stream_follows_event_contract_and_filters_citations() -> None:
     }
     assert done["usage"]["total_tokens"] == 20
     assert engine.stream_inputs == [("流式测试", "fast")]
+    assert engine.stream_sessions == [None]
+
+
+def test_stream_session_header_preserves_event_contract() -> None:
+    result = _result(answer="你好 [C1]")
+    engine = StubEngine(
+        stream_events=[
+            {"event": "status", "data": {"stage": "retrieving"}},
+            {"event": "done", "data": result},
+        ]
+    )
+    client = TestClient(create_app(engine))
+
+    response = client.post(
+        "/api/v1/answer/stream",
+        headers={"X-Session-ID": "stream-session"},
+        json={"question": "流式测试", "mode": "fast"},
+    )
+
+    events = _parse_sse(response.text)
+    assert [name for name, _data in events] == [
+        "start",
+        "status",
+        "done",
+    ]
+    assert engine.stream_sessions == ["stream-session"]
+    assert set(events[-1][1]) == {
+        "request_id",
+        "answer",
+        "refused",
+        "citations",
+        "model",
+        "timings",
+        "usage",
+    }
 
 
 def test_stream_refusal_has_no_citations() -> None:
@@ -268,6 +362,29 @@ def test_sync_model_error_is_sanitized() -> None:
     assert "sensitive provider detail" not in response.text
 
 
+def test_sync_tool_failure_is_sanitized() -> None:
+    engine = StubEngine(
+        sync_error=ToolExecutionError(
+            "search_official_policy_sources",
+            "timeout",
+        )
+    )
+    client = TestClient(create_app(engine))
+
+    response = client.post(
+        "/api/v1/answer",
+        json={"question": "触发工具错误"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "error": {
+            "code": "tool_unavailable",
+            "message": "合规工具暂时不可用。",
+        }
+    }
+
+
 def test_stream_error_is_sanitized() -> None:
     engine = StubEngine(
         stream_error=ModelGenerationError("sensitive provider detail")
@@ -285,3 +402,23 @@ def test_stream_error_is_sanitized() -> None:
     assert error["message"] == "生成模型暂时不可用。"
     assert "sensitive provider detail" not in response.text
     assert "Traceback" not in response.text
+
+
+def test_stream_tool_failure_uses_existing_error_event() -> None:
+    engine = StubEngine(
+        stream_error=ToolExecutionError(
+            "search_official_policy_sources",
+            "timeout",
+        )
+    )
+    client = TestClient(create_app(engine))
+
+    response = client.post(
+        "/api/v1/answer/stream",
+        json={"question": "触发工具错误"},
+    )
+
+    events = _parse_sse(response.text)
+    assert [name for name, _data in events] == ["start", "error"]
+    assert events[-1][1]["code"] == "tool_unavailable"
+    assert "search_official_policy_sources" not in response.text

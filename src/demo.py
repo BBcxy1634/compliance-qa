@@ -10,12 +10,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from src.config import DEEPSEEK_API_KEY, DEFAULT_CHUNKS_PATH
+from src.config import DEEPSEEK_API_KEY, DEFAULT_CHUNKS_PATH, MANIFEST_PATH
+from src.conversation import ConversationStore
 from src.rag import (
     answer_with_retriever,
     create_retriever,
     stream_answer_with_retriever,
 )
+from src.tools import PolicySnapshotCatalog, ToolRuntime
 
 
 @dataclass(frozen=True)
@@ -59,12 +61,49 @@ def is_refusal_result(result: dict[str, Any]) -> bool:
 
 
 class DemoEngine:
-    """Lazily load retrievers and keep them warm across browser requests."""
+    """Lazily load retrievers and keep bounded per-session context."""
 
-    def __init__(self, chunks_path: Path = DEFAULT_CHUNKS_PATH) -> None:
+    def __init__(
+        self,
+        chunks_path: Path = DEFAULT_CHUNKS_PATH,
+        *,
+        conversation_store: ConversationStore | None = None,
+        snapshot_catalog: PolicySnapshotCatalog | None = None,
+        tool_max_attempts: int = 2,
+    ) -> None:
         self.chunks_path = chunks_path
         self._retrievers: dict[str, Any] = {}
         self._load_lock = threading.Lock()
+        self.conversations = conversation_store or ConversationStore()
+        self._snapshot_catalog = snapshot_catalog
+        self._catalog_lock = threading.Lock()
+        self.tool_max_attempts = tool_max_attempts
+
+    def get_snapshot_catalog(self) -> PolicySnapshotCatalog | None:
+        with self._catalog_lock:
+            if self._snapshot_catalog is None and MANIFEST_PATH.exists():
+                self._snapshot_catalog = PolicySnapshotCatalog.from_jsonl(
+                    MANIFEST_PATH
+                )
+            return self._snapshot_catalog
+
+    def _tool_runtime(self, retriever: Any) -> ToolRuntime:
+        return ToolRuntime(
+            retriever,
+            snapshot_catalog=self.get_snapshot_catalog(),
+            max_attempts=self.tool_max_attempts,
+        )
+
+    @staticmethod
+    def _session_key(session_id: str | None) -> str | None:
+        if session_id is None:
+            return None
+        value = session_id.strip()
+        if not value or len(value) > 128:
+            raise ValueError("Invalid session id.")
+        if not re.fullmatch(r"[A-Za-z0-9._:-]+", value):
+            raise ValueError("Invalid session id.")
+        return value
 
     def get_retriever(self, mode_key: str) -> Any:
         if mode_key not in MODES:
@@ -86,7 +125,8 @@ class DemoEngine:
         self,
         question: str,
         mode_key: str,
-    ) -> tuple[str, ModeConfig, Any]:
+        session_id: str | None = None,
+    ) -> tuple[str, ModeConfig, Any, str | None, dict[str, Any]]:
         question = (question or "").strip()
         if not question:
             raise ValueError("请输入问题。")
@@ -98,11 +138,24 @@ class DemoEngine:
         if config is None:
             raise ValueError(f"Unknown demo mode: {mode_key}")
         retriever = self.get_retriever(mode_key)
-        return question, config, retriever
+        session_key = self._session_key(session_id)
+        context = (
+            self.conversations.get_context(session_key)
+            if session_key is not None
+            else {"summary": "", "recent_turns": []}
+        )
+        return question, config, retriever, session_key, context
 
-    def ask(self, question: str, mode_key: str) -> dict[str, Any]:
-        question, config, retriever = self._prepare_request(question, mode_key)
-        return answer_with_retriever(
+    def ask(
+        self,
+        question: str,
+        mode_key: str,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        question, config, retriever, session_key, context = (
+            self._prepare_request(question, mode_key, session_id)
+        )
+        result = answer_with_retriever(
             question,
             retriever=retriever,
             backend=config.backend,
@@ -110,22 +163,55 @@ class DemoEngine:
             top_k=5,
             thinking=config.thinking,
             max_tokens=config.max_tokens,
+            conversation_context=context,
+            tool_runtime=self._tool_runtime(retriever),
         )
+        if session_key is not None:
+            self.conversations.append(
+                session_key,
+                question=question,
+                answer=str(result.get("answer", "")),
+                refused=bool(result.get("refused")),
+            )
+        return result
 
     def stream_ask(
         self,
         question: str,
         mode_key: str,
+        session_id: str | None = None,
     ) -> Iterator[dict[str, Any]]:
-        question, config, retriever = self._prepare_request(question, mode_key)
-        return stream_answer_with_retriever(
+        question, config, retriever, session_key, context = (
+            self._prepare_request(question, mode_key, session_id)
+        )
+        events = stream_answer_with_retriever(
             question,
             retriever=retriever,
             backend=config.backend,
             top_k=5,
             thinking=config.thinking,
             max_tokens=config.max_tokens,
+            conversation_context=context,
+            tool_runtime=self._tool_runtime(retriever),
         )
+        return self._record_stream(session_key, question, events)
+
+    def _record_stream(
+        self,
+        session_key: str | None,
+        question: str,
+        events: Iterator[dict[str, Any]],
+    ) -> Iterator[dict[str, Any]]:
+        for event in events:
+            if event.get("event") == "done" and session_key is not None:
+                data = dict(event.get("data") or {})
+                self.conversations.append(
+                    session_key,
+                    question=question,
+                    answer=str(data.get("answer", "")),
+                    refused=bool(data.get("refused")),
+                )
+            yield event
 
 
 def format_answer_html(answer: str, refused: bool = False) -> str:

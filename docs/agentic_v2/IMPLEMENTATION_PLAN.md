@@ -137,7 +137,7 @@ Phase 2 verification (2026-11-10):
 
 ## Phase 3: Tools and Short-Term Conversation
 
-Status: not started
+Status: complete
 
 Goal:
 
@@ -172,6 +172,23 @@ Acceptance:
 - tool calls appear in traces
 - repeated tool loops are impossible or bounded
 - session context is isolated between requests
+
+Phase 3 verification (2026-11-10):
+
+- 80 tests passed with `python -m pytest -q`.
+- Four typed tools cover retrieval, latest snapshot inspection, version
+  comparison, and validity-period validation.
+- Every tool has a typed success record and a stable failure record.
+- Retries use a configurable ceiling capped at three total attempts.
+- Core search failure uses the existing API/SSE error channel with public code
+  `tool_unavailable`.
+- Optional tool failures are recorded without discarding valid evidence.
+- Session context is process-local, bounded, and isolated by optional
+  `X-Session-ID`; requests without the header remain stateless.
+- Current one-snapshot source data returns `insufficient_versions` for version
+  comparison rather than fabricating changes.
+- Existing B1 Fast, B3, refusal, high-risk, citation, CLI, Gradio, API, and SSE
+  behavior remains covered by tests.
 
 ## Phase 4: Evaluation and Observability
 

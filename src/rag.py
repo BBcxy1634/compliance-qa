@@ -13,7 +13,7 @@ from src.agent_graph import (
     answer_with_graph,
     stream_answer_with_graph,
 )
-from src.config import DEFAULT_CHUNKS_PATH, DEFAULT_TOP_K
+from src.config import DEFAULT_CHUNKS_PATH, DEFAULT_TOP_K, MANIFEST_PATH
 from src.retrieve import (
     BM25Retriever,
     BGEVectorRetriever,
@@ -21,6 +21,16 @@ from src.retrieve import (
     HybridRetriever,
     RerankedRetriever,
 )
+from src.tools import PolicySnapshotCatalog, ToolRuntime
+
+
+def _default_tool_runtime(retriever: Any) -> ToolRuntime:
+    catalog = (
+        PolicySnapshotCatalog.from_jsonl(MANIFEST_PATH)
+        if MANIFEST_PATH.exists()
+        else None
+    )
+    return ToolRuntime(retriever, snapshot_catalog=catalog)
 
 
 def create_retriever(
@@ -72,6 +82,8 @@ def answer_with_retriever(
     top_k: int,
     thinking: bool = True,
     max_tokens: int | None = None,
+    conversation_context: dict[str, Any] | None = None,
+    tool_runtime: ToolRuntime | None = None,
 ) -> dict[str, Any]:
     return answer_with_graph(
         question,
@@ -82,7 +94,9 @@ def answer_with_retriever(
             top_k=top_k,
             thinking=thinking,
             max_tokens=max_tokens,
+            tool_runtime=tool_runtime or _default_tool_runtime(retriever),
         ),
+        conversation_context=conversation_context,
     )
 
 
@@ -99,6 +113,8 @@ def stream_answer_with_retriever(
     top_k: int,
     thinking: bool = True,
     max_tokens: int | None = None,
+    conversation_context: dict[str, Any] | None = None,
+    tool_runtime: ToolRuntime | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Stream the controlled graph's answer events."""
     yield from stream_answer_with_graph(
@@ -111,7 +127,9 @@ def stream_answer_with_retriever(
             thinking=thinking,
             max_tokens=max_tokens,
             stream_tokens=True,
+            tool_runtime=tool_runtime or _default_tool_runtime(retriever),
         ),
+        conversation_context=conversation_context,
     )
 
 
