@@ -16,6 +16,11 @@ TRACE_DIR=.cache/traces
 
 `TRACE_ENABLED=false` is the default. The Gradio and CLI paths remain unchanged.
 
+In Compose, `TRACE_DIR` points at `/app/.cache/traces`. The directory is created
+for the non-root container user and backed by a named volume. Enabling Trace
+does not make TraceStore a required startup dependency; write failure still
+disables tracing without changing API or SSE behavior.
+
 ## Files
 
 | File | Content |

@@ -242,7 +242,8 @@ Phase 4 verification (2026-11-10):
 
 ## Phase 5: Packaging, CI, and Release
 
-Status: not started
+Status: complete in the repository; external Docker runtime and remote GitHub
+Actions execution remain approval-dependent
 
 Goal:
 
@@ -264,6 +265,31 @@ Acceptance:
 - CI passes from a clean checkout
 - README includes API examples and limitations
 - release assets and version notes are complete
+
+Phase 5 verification (2026-11-10):
+
+- `Dockerfile`, `.dockerignore`, `compose.yaml`, and a GitHub Actions workflow
+  are added.
+- Compose starts one FastAPI service and adds no Qdrant, PostgreSQL, Redis, or
+  other infrastructure.
+- Corpus and Chroma data are read-only bind mounts; Hugging Face cache and Trace
+  output use named volumes.
+- The image runs as a non-root user with pre-created writable cache and Trace
+  directories.
+- Deterministic CI tests use `-m "not data"`; 86 tests are selected without
+  ignored local corpus or Chroma artifacts.
+- The evaluation smoke uses synthetic fixture chunks, BM25, extractive
+  generation, and `--judge none`; it executes no DeepSeek request.
+- The smoke completes 3/3 questions with refusal accuracy 1.0 and route accuracy
+  1.0.
+- Full local tests pass: 94 tests.
+- Compose, Dockerfile, Docker context, workflow, and fixture structure are
+  covered by static packaging tests.
+- Docker is not installed on the current machine, so no container build or
+  startup is claimed.
+- GitHub Actions has not been executed because this phase was not pushed.
+- `VERSION`, README, architecture, deployment, limitation/failure, changelog,
+  and v2.0.0 release-note drafts are updated.
 
 ## Overall Success Criteria
 

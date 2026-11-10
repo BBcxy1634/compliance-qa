@@ -6,10 +6,14 @@ import json
 from collections import Counter
 
 import chromadb
+import pytest
 
 from src.config import CHROMA_DIR, DEFAULT_CHUNKS_PATH
 from src.generate import REFUSAL_TEXT, extractive_answer
 from src.retrieve import BM25Retriever
+
+
+pytestmark = pytest.mark.data
 
 
 def load_chunks() -> list[dict]:

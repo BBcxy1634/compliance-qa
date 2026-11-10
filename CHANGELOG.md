@@ -2,6 +2,52 @@
 
 All notable project changes are documented in this file.
 
+## [2.0.0] - 2026-11-10
+
+Status: release candidate prepared; Git tag and GitHub Release are not created.
+
+### Added
+
+- FastAPI synchronous answer and SSE streaming endpoints.
+- Controlled LangGraph routing with deterministic high-risk, multi-hop, and
+  simple-fact handling.
+- Bounded search, snapshot inspection, version comparison, and validity-period
+  tools.
+- Optional process-local short-term conversation context.
+- High-risk answers require two distinct cited sources.
+- Local best-effort JSONL tracing with payload allowlists.
+- 150-question agentic evaluation set with separate route, tool, evidence, and
+  multi-step metrics.
+- Dockerfile, Docker Compose API service, and named Trace/model-cache volumes.
+- GitHub Actions deterministic test and synthetic evaluation smoke jobs.
+- V2 architecture, deployment, failure-case, and release documentation.
+
+### Preserved
+
+- B1 Fast remains the default mode.
+- B3 remains an optional quality mode.
+- Refusals always return zero citations.
+- Public citations are filtered to IDs present in the final answer.
+- CLI and Gradio entry points remain available.
+- Existing metric definitions are unchanged; agentic metrics remain separate.
+
+### Verified
+
+- 94 automated tests pass with local data and vector artifacts present.
+- 86 deterministic tests are selected when data-dependent tests are excluded.
+- The synthetic BM25/extractive evaluation smoke passes 3/3 questions without a
+  DeepSeek key or network model call.
+- Python YAML parsing and packaging tests validate the Compose, Dockerfile,
+  Docker context, workflow, and smoke fixture structure.
+
+### Notes
+
+- Docker and GitHub Actions were not executed in the current local environment.
+- Independent human review has not been completed for the V2 question labels.
+- No full paid V2 DeepSeek evaluation was run in Phase 4 or Phase 5.
+- Existing benchmark latency and cost results are v1 reference measurements,
+  not a new V2 paid benchmark.
+
 ## [1.0.0] - 2026-11-01
 
 ### Added

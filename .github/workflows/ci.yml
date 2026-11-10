@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - feat/agentic-v2
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TRACE_ENABLED: "false"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Compile application modules
+        run: python -m compileall -q src scripts app.py evaluate.py bench.py
+
+      - name: Run deterministic tests
+        run: python -m pytest -q -m "not data"
+
+      - name: Validate Compose syntax
+        run: docker compose config --quiet
+
+  eval-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TRACE_ENABLED: "false"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run deterministic evaluation smoke
+        run: >-
+          python -m src.evaluate
+          --config eval/configs/phase4_b1_fast.yaml
+          --questions eval/fixtures/agentic_smoke_questions.jsonl
+          --chunks eval/fixtures/agentic_smoke_chunks.jsonl
+          --backend bm25
+          --mode extractive
+          --judge none
+          --run-name ci_eval_smoke
+
+      - name: Validate smoke summary
+        run: >-
+          python scripts/check_eval_smoke.py
+          --summary eval/results/ci_eval_smoke/summary.json

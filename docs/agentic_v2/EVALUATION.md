@@ -114,6 +114,24 @@ Run a deterministic local smoke evaluation without DeepSeek:
   --run-name phase4_smoke
 ```
 
+Run the smaller synthetic smoke used by CI from a clean checkout:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.evaluate `
+  --config eval/configs/phase4_b1_fast.yaml `
+  --questions eval/fixtures/agentic_smoke_questions.jsonl `
+  --chunks eval/fixtures/agentic_smoke_chunks.jsonl `
+  --backend bm25 `
+  --mode extractive `
+  --judge none `
+  --run-name ci_eval_smoke
+.\.venv\Scripts\python.exe scripts/check_eval_smoke.py `
+  --summary eval/results/ci_eval_smoke/summary.json
+```
+
+The CI fixture is synthetic and is not part of the 150-question benchmark
+dataset. It validates the evaluation path, not model quality.
+
 Run the full B1 Fast evaluation after confirming network and API cost:
 
 ```powershell

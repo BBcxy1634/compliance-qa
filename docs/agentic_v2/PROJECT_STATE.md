@@ -10,9 +10,9 @@ Last updated: 2026-11-10
 | Current branch | `feat/agentic-v2` |
 | Base release | `v1.0.0` |
 | Base commit | `1ea2f4b9161b921d126466f86e69782bec9b34b1` |
-| Current V2 phase | Phase 4: evaluation and observability complete |
-| V2 code status | Phase 4 complete |
-| Current release state | v1.0.0 remains the released version |
+| Current V2 phase | Phase 5: packaging, CI, and release preparation complete locally |
+| V2 code status | Phase 5 implementation and documentation complete |
+| Current release state | v1.0.0 is published; v2.0.0 release candidate is not tagged or published |
 
 ## V2 Goal
 
@@ -75,6 +75,14 @@ PPT / HTML / PDF
   -> citation verification or refusal
   -> Gradio UI / CLI / FastAPI
   -> bounded per-session context
+  -> best-effort local JSONL trace
+
+Deployment:
+
+FastAPI container
+  -> read-only data/ and chroma_db/ mounts
+  -> named Hugging Face cache and Trace volumes
+  -> /health and /api/v1/* on port 8000
 ```
 
 Important existing modules:
@@ -202,8 +210,11 @@ Results:
 - New Phase 4 questions and agentic labels are `draft`; independent human
   review was not executed and was exempted by the project owner.
 - The full paid DeepSeek evaluation has not been run in Phase 4.
-- No Docker-based service composition.
-- No GitHub Actions workflow.
+- Docker is not installed on the current development machine, so the container
+  build and runtime have not been executed.
+- GitHub Actions has not run because the branch was not pushed in Phase 5.
+- Short-term sessions and local traces are process-local and do not support
+  multi-replica coordination.
 - Current Gradio app is local and single-request oriented.
 
 ## Phase 4 Verification
@@ -245,9 +256,59 @@ API and best effort: a write failure does not affect the answer path.
 The detailed contracts are in `docs/agentic_v2/EVALUATION.md` and
 `docs/agentic_v2/OBSERVABILITY.md`.
 
+## Phase 5 Verification
+
+Phase 5 adds:
+
+- a Python 3.13 Docker image running as a non-root user
+- a single-service Docker Compose API deployment
+- read-only corpus and Chroma mounts plus named cache and Trace volumes
+- a GitHub Actions workflow with deterministic tests, Compose syntax validation,
+  and a synthetic evaluation smoke
+- explicit `data` markers for tests requiring ignored local corpus and Chroma
+  artifacts
+- a three-question synthetic BM25/extractive smoke fixture with no real sources
+  and no DeepSeek calls
+- v2 architecture, deployment, limitations/failure cases, and release-note
+  documentation
+
+Validation performed on 2026-11-10:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m pytest -q -m "not data"
+.\.venv\Scripts\python.exe -m src.evaluate `
+  --config eval/configs/phase4_b1_fast.yaml `
+  --questions eval/fixtures/agentic_smoke_questions.jsonl `
+  --chunks eval/fixtures/agentic_smoke_chunks.jsonl `
+  --backend bm25 `
+  --mode extractive `
+  --judge none `
+  --run-name ci_eval_smoke
+.\.venv\Scripts\python.exe scripts/check_eval_smoke.py `
+  --summary eval/results/ci_eval_smoke/summary.json
+```
+
+Results:
+
+- 94 full tests passed with local data and Chroma artifacts present.
+- 86 deterministic tests were selected with data-dependent tests excluded.
+- The synthetic evaluation smoke completed 3/3 questions.
+- Smoke refusal accuracy was 1.0 and route accuracy was 1.0.
+- Packaging tests parsed Compose and workflow YAML and checked the Dockerfile,
+  Docker context, and fixture structure.
+- Docker is not installed locally, so `docker compose config`, image build, and
+  service startup were not executed on this machine.
+- Remote GitHub Actions was not executed. The workflow is prepared but has not
+  produced a CI result.
+
+The detailed operation and failure contract is in
+`docs/agentic_v2/DEPLOYMENT.md` and
+`docs/agentic_v2/LIMITATIONS_AND_FAILURES.md`.
+
 ## Current Phase and Next Task
 
-Phase 4 is complete. The FastAPI application exposes:
+Phase 5 is complete in the repository. The FastAPI application exposes:
 
 - `GET /health`
 - `POST /api/v1/answer`
@@ -259,8 +320,15 @@ incremental token deltas. The `done` event contains only citations whose IDs
 occur in the complete answer body. Refusals always return `refused=true` and no
 citations.
 
-The next task is **Phase 5: Packaging, CI, and Release**, which is not started.
-Do not implement Docker, CI, or release work before that phase starts.
+The repository now includes Docker Compose packaging, a GitHub Actions workflow,
+and v2.0.0 release notes. These actions still require explicit approval:
+
+- push the branch or open a pull request to run remote CI
+- run an actual Docker build and health check on a Docker-enabled machine
+- decide whether to run the full paid V2 evaluation
+- decide whether independent human review is required before release
+- create the `v2.0.0` tag and GitHub Release
+- merge the branch to `master`
 
 The API contract is documented in `docs/agentic_v2/API.md`. The graph contract
 is documented in `docs/agentic_v2/GRAPH.md`. Tool and session contracts are

@@ -1,8 +1,35 @@
 # 跨境卖家合规问答助手
 
-**Version 1.0.0** · [GitHub Release](https://github.com/BBcxy1634/compliance-qa/releases/tag/v1.0.0)
+**Version 2.0.0 release candidate** · [已发布 v1.0.0](https://github.com/BBcxy1634/compliance-qa/releases/tag/v1.0.0)
 
 一个可追溯的 RAG 项目：从 7 份自建 PPT、Amazon/eBay 官方政策和海关监管文件中检索依据，生成带来源和页码的合规答案；证据不足时明确拒答。
+
+## Agentic Compliance Copilot v2
+
+V2 在不改变 B1 Fast 默认路径和原有评价口径的前提下，增加了受控 Agentic RAG
+应用层：
+
+- FastAPI 同步接口 `POST /api/v1/answer` 和 SSE 接口
+  `POST /api/v1/answer/stream`。
+- LangGraph 六节点状态机，确定性路由为
+  `high_risk > multi_hop > simple_fact`。
+- 有界工具调用，包括来源检索、最新快照检查、版本比较和有效期校验。
+- 可选 `X-Session-ID` 短期上下文，最多保留 4 轮最近对话，不持久化。
+- 高风险问题至少引用两个不同来源；引用必须真实出现在答案正文中。
+- 默认关闭的本地 JSONL Trace，写盘失败不会影响 API 或 SSE。
+- 150 题 Phase 4 评测集和独立的 agentic 指标层。
+- Docker Compose 单服务打包、GitHub Actions 确定性测试和评测 smoke。
+
+当前 V2 自动化指标中的新增评测标签仍为 `draft`。独立人工复核没有执行，
+不能将自动判题或 draft 标签描述为人工通过。完整付费 DeepSeek 评测也未在
+Phase 4/5 重新运行。
+
+API、图状态和工具契约见 [API](docs/agentic_v2/API.md)、
+[Graph](docs/agentic_v2/GRAPH.md) 和 [Tools](docs/agentic_v2/TOOLS.md)。
+V2 架构、部署与限制分别见
+[Architecture](docs/agentic_v2/ARCHITECTURE.md)、
+[Deployment](docs/agentic_v2/DEPLOYMENT.md) 和
+[Limitations and failures](docs/agentic_v2/LIMITATIONS_AND_FAILURES.md)。
 
 ## 系统架构
 
@@ -79,6 +106,63 @@ python evaluate.py --config eval/configs/b3_deepseek.yaml --chunks data/processe
 python scripts/check_environment.py --require-data
 python -m pytest -q
 ```
+
+## V2 API
+
+完成数据准备并在 `.env` 配置 `DEEPSEEK_API_KEY` 后启动 API：
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn src.api:app --host 127.0.0.1 --port 8000
+```
+
+健康检查与同步问答：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://127.0.0.1:8000/api/v1/answer `
+  -ContentType "application/json; charset=utf-8" `
+  -Body '{"question":"eBay 是否允许销售假冒商品？","mode":"fast"}'
+```
+
+流式接口返回 `start`、`status`、`token`、`done` 或 `error` SSE 事件。
+`citations` 只在 `done` 事件中返回，并且仅包含正文实际使用的引用。
+
+## Docker Compose
+
+Docker 镜像只启动 FastAPI；不增加 Qdrant、PostgreSQL 或 Redis。Compose 使用
+宿主机已有的 `data/` 和 `chroma_db/` 只读挂载，模型缓存与 Trace 使用命名卷。
+
+先在本机完成一次数据准备：
+
+```powershell
+python scripts/bootstrap.py
+```
+
+再启动：
+
+```powershell
+docker compose up --build -d
+docker compose ps
+Invoke-RestMethod http://127.0.0.1:8000/health
+```
+
+停止服务：
+
+```powershell
+docker compose down
+```
+
+干净的 Git checkout 不包含官方 HTML/PDF、处理后的 chunks 或 Chroma 数据库。
+因此容器健康检查可以启动，但真实问答前必须先在宿主机完成
+`bootstrap.py`。Docker 中 `TORCH_DEVICE` 默认是 `cpu`；B3 仍可显式选择，
+但 CPU 延迟较高。
+
+Trace 默认关闭。若在 `.env` 设置 `TRACE_ENABLED=true`，容器会写入
+`/app/.cache/traces` 命名卷。目录不可写时 TraceStore 会自行关闭，不会阻止
+API 启动或改变回答响应。完整说明见
+[部署文档](docs/agentic_v2/DEPLOYMENT.md)。
 
 ## 语料来源与版权
 
@@ -162,6 +246,10 @@ compliance-qa/
 - q032、q049 仍存在精确 chunk 覆盖不足。
 - 自动判题结果尚未完成人工复核。
 - Demo 为单轮问答，不保存会话历史；B3 首次加载在 CPU 上较慢。
+- V2 的 150 题新增标签是 `draft`，没有人工通过结论。
+- V2 的完整付费 DeepSeek 评测尚未运行。
+- 当前轮次没有实际启动 Docker 容器，也没有运行远程 GitHub Actions。
+- 短期会话、Trace 和模型缓存没有实现多实例共享。
 
 ## 许可证与数据权利
 

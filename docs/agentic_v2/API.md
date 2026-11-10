@@ -1,4 +1,4 @@
-# Compliance RAG API v1
+# Compliance RAG API v2.0.0
 
 FastAPI exposes the existing B1 Fast and B3 RAG paths through FastAPI. Both the
 synchronous and SSE endpoints run the controlled LangGraph state machine
@@ -9,6 +9,12 @@ Run locally:
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn src.api:app --host 127.0.0.1 --port 8000
+```
+
+Run through Compose after host-side data preparation:
+
+```powershell
+docker compose up --build -d
 ```
 
 ## Request

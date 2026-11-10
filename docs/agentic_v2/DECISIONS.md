@@ -147,3 +147,45 @@ Automated or model-generated judgments are not a substitute for human review.
 The evaluation can still exercise the software and report provisional metrics
 without claiming unsupported review evidence.
 
+## ADR-013: One Container, Existing Local Data
+
+Decision:
+
+Package only the FastAPI application in Docker Compose. Mount existing `data/`
+and `chroma_db/` read-only instead of adding Qdrant, PostgreSQL, Redis, or a data
+initialization service.
+
+Reason:
+
+The current corpus is small, the Chroma path is already the validated default,
+and Phase 5 must not change retrieval architecture. A single service remains
+runnable and reviewable. Host-side bootstrap is the explicit prerequisite for
+real answers.
+
+## ADR-014: Synthetic Evaluation Smoke in CI
+
+Decision:
+
+Run a three-question synthetic BM25/extractive evaluation in CI with
+`--judge none`.
+
+Reason:
+
+Clean checkout does not contain ignored official sources, chunks, Chroma data,
+or an API key. The synthetic smoke exercises graph routing, retrieval, evidence
+assessment, refusal, citations, and metric output without network model calls,
+paid provider usage, or fabricated vector data.
+
+## ADR-015: Explicitly Separate Data Tests
+
+Decision:
+
+Mark tests that require ignored local corpus or Chroma artifacts as `data`.
+Full local verification runs every test; no-data CI runs `-m "not data"`.
+
+Reason:
+
+The repository intentionally excludes source snapshots, processed chunks, and
+the vector database. The marker keeps a clean checkout verification
+deterministic without deleting integration coverage for prepared environments.
+

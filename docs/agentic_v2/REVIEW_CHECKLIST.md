@@ -49,6 +49,18 @@
 - [ ] Metrics include the command or source used to generate them.
 - [ ] Draft questions and labels are not represented as human-approved.
 
+## Packaging and Release
+
+- [ ] Docker Compose adds no infrastructure without a phase requirement.
+- [ ] Docker build context excludes `.env`, official raw data, Chroma, and
+  private data.
+- [ ] Trace directory failure cannot prevent service startup or change API/SSE
+  behavior.
+- [ ] CI uses deterministic tests and a no-provider evaluation smoke.
+- [ ] Actual Docker startup and remote CI results are recorded only after they
+  run.
+- [ ] Tag and GitHub Release creation remain separate approval-gated actions.
+
 ## Git
 
 - [ ] One phase maps to one coherent commit.

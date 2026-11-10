@@ -8,6 +8,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import pytest
+
 from src.agent_graph import classify_route
 
 
@@ -33,6 +35,7 @@ def test_eval_set_has_required_distribution() -> None:
     assert all(question["review_status"] == "approved" for question in questions)
 
 
+@pytest.mark.data
 def test_eval_validator_passes() -> None:
     result = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "validate_eval.py")],
@@ -78,6 +81,7 @@ def test_agentic_eval_set_is_versioned_and_draft_reviewed() -> None:
     )
 
 
+@pytest.mark.data
 def test_agentic_eval_validator_passes() -> None:
     result = subprocess.run(
         [

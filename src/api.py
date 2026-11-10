@@ -250,7 +250,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(
         title="Compliance RAG API",
-        version="0.1.0",
+        version="2.0.0",
     )
 
     @app.exception_handler(RequestValidationError)
