@@ -20,6 +20,9 @@ REFUSAL_TEXT = "文档中未找到足够依据，暂时无法回答这个问题�
 DEEPSEEK_PROMPT_VERSION = "deepseek-compliance-v2.1"
 EXTRACTIVE_PROMPT_VERSION = "extractive-template-v1"
 CITATION_PATTERN = re.compile(r"\[C(\d+)\]")
+ENTITY_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9])[A-Z][A-Z0-9.-]{1,}(?![A-Za-z0-9])"
+)
 HEADING_ONLY_LINES = {
     "What is the policy?",
     "Why does eBay have this policy?",
@@ -34,7 +37,12 @@ SYSTEM_PROMPT = """你是跨境卖家合规问答助手。
 每个事实性句子或列表项都必须标注对应引用，例如 [C1] 或 [C1][C2]；只能使用检索片段中实际存在的引用编号。
 如果证据只能回答部分问题，明确说明可以确认的内容和无法确认的部分，不要猜测。
 如果所有检索片段都不足以回答，只输出：文档中未找到足够依据，暂时无法回答这个问题。
+比较或“更适合”问题必须分别说明优势和限制；计数题必须写出所有数量；
+材料、退税和流程题必须写出办理所需的证明或凭证。
 回答必须完整覆盖问题所需事实，但要精炼，避免重复、复述整段资料和无关背景。"""
+REPAIR_INSTRUCTION = """本轮证据已经通过充分性检查。
+根据片段逐项回答所有子问题，优先覆盖数字、期限、条件、材料和例外。
+不得整体拒答；只对确实缺失的细节说明无法确认，其余内容必须回答并标注引用。"""
 
 
 class ModelGenerationError(RuntimeError):
@@ -103,6 +111,7 @@ def assess_evidence(
     max_hits: int = 3,
     min_score: float = 0.5,
     enforce_term_coverage: bool = True,
+    require_term_coverage: bool | None = None,
     backend: str = "bm25",
 ) -> EvidenceAssessment:
     """Apply the existing extractive evidence rules without generating text."""
@@ -111,20 +120,39 @@ def assess_evidence(
     combined_text = "\n".join(hit.chunk["text"] for hit in strong_hits)
     hit_tokens = set(tokenize(combined_text))
     matched_tokens = query_tokens.intersection(hit_tokens)
+    entity_anchors = {
+        token.lower()
+        for token in ENTITY_PATTERN.findall(question)
+    }
+    entity_anchors.update(
+        token
+        for token in query_tokens
+        if len(token) >= 2
+        and re.search(r"(?:法|税|证|仓|清单)$", token)
+    )
     query_years = set(re.findall(r"(?:19|20)\d{2}", question))
+    hit_years = set(re.findall(r"(?:19|20)\d{2}", combined_text))
+    for hit in strong_hits:
+        for key in (
+            "published_at",
+            "updated_at",
+            "captured_at",
+        ):
+            hit_years.update(
+                re.findall(
+                    r"(?:19|20)\d{2}",
+                    str(hit.chunk.get(key, "")),
+                )
+            )
     years_covered = True
     if backend == "bge_m3" and strong_hits:
-        top_text = strong_hits[0].chunk["text"]
-        top_tokens = set(tokenize(top_text))
-        top_years = set(re.findall(r"(?:19|20)\d{2}", top_text))
         coverage_ok = strong_hits[0].score >= 0.65 or len(
-            query_tokens.intersection(top_tokens)
+            matched_tokens
         ) >= 2
-        if query_years and not query_years.issubset(top_years):
+        if query_years and not query_years.issubset(hit_years):
             coverage_ok = False
             years_covered = False
     else:
-        hit_years = set(re.findall(r"(?:19|20)\d{2}", combined_text))
         coverage_ok = (
             len(matched_tokens) >= 2
             if len(query_tokens) > 1
@@ -133,7 +161,13 @@ def assess_evidence(
         if query_years and not query_years.issubset(hit_years):
             coverage_ok = False
             years_covered = False
-    requires_coverage = backend == "bge_m3" or enforce_term_coverage
+    requires_coverage = (
+        enforce_term_coverage
+        if require_term_coverage is None
+        else require_term_coverage
+    )
+    if requires_coverage and entity_anchors - hit_tokens:
+        coverage_ok = False
     if not strong_hits:
         return EvidenceAssessment(False, strong_hits, "no_strong_hits")
     if requires_coverage and not coverage_ok:
@@ -154,25 +188,34 @@ def extractive_answer(
     min_score: float = 0.5,
     enforce_term_coverage: bool = True,
     backend: str = "bm25",
+    assume_sufficient: bool = False,
 ) -> dict[str, Any]:
     """Build a grounded answer without calling an external model."""
-    assessment = assess_evidence(
-        question,
-        hits,
-        max_hits=max_hits,
-        min_score=min_score,
-        enforce_term_coverage=enforce_term_coverage,
-        backend=backend,
-    )
-    strong_hits = assessment.strong_hits
+    if assume_sufficient:
+        strong_hits = hits[:max_hits]
+        sufficient = bool(strong_hits)
+        refusal_reason = "" if sufficient else "no_strong_hits"
+    else:
+        assessment = assess_evidence(
+            question,
+            hits,
+            max_hits=max_hits,
+            min_score=min_score,
+            enforce_term_coverage=enforce_term_coverage,
+            backend=backend,
+        )
+        strong_hits = assessment.strong_hits
+        sufficient = assessment.sufficient
+        refusal_reason = assessment.reason
     query_tokens = set(tokenize(question))
-    if not assessment.sufficient:
+    if not sufficient:
         return {
             "answer": REFUSAL_TEXT,
             "citations": [],
             "mode": "extractive",
             "refused": True,
             "prompt_version": EXTRACTIVE_PROMPT_VERSION,
+            "refusal_reason": refusal_reason,
         }
 
     selected: list[tuple[str, int, dict[str, Any]]] = []
@@ -265,16 +308,26 @@ def _deepseek_messages(
     question: str,
     hits: list[SearchHit],
     conversation_context: dict[str, Any] | None = None,
+    *,
+    repair: bool = False,
+    required_source_count: int = 1,
 ) -> list[dict[str, str]]:
     context_block = _conversation_prompt_block(conversation_context)
     context_section = f"\n\n{context_block}" if context_block else ""
+    repair_section = f"{REPAIR_INSTRUCTION}\n\n" if repair else ""
+    source_section = (
+        f"\n高风险引用要求：必须引用至少 {required_source_count} 个不同来源。"
+        if required_source_count > 1
+        else ""
+    )
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
         {
             "role": "user",
             "content": (
-                f"问题：{question}"
-                f"{context_section}\n\n检索片段：\n{build_context(hits)}"
+                f"{repair_section}问题：{question}"
+                f"{context_section}{source_section}"
+                f"\n\n检索片段：\n{build_context(hits)}"
             ),
         },
     ]
@@ -348,6 +401,8 @@ def deepseek_answer(
     thinking: bool = True,
     max_tokens: int = DEEPSEEK_MAX_TOKENS,
     conversation_context: dict[str, Any] | None = None,
+    repair: bool = False,
+    required_source_count: int = 1,
 ) -> dict[str, Any]:
     """Generate an answer through the DeepSeek OpenAI-compatible API."""
     client = _deepseek_client()
@@ -361,6 +416,8 @@ def deepseek_answer(
                 question,
                 hits,
                 conversation_context,
+                repair=repair,
+                required_source_count=required_source_count,
             ),
         )
     except Exception as exc:
@@ -383,6 +440,7 @@ def deepseek_answer_stream(
     thinking: bool = True,
     max_tokens: int = DEEPSEEK_MAX_TOKENS,
     conversation_context: dict[str, Any] | None = None,
+    required_source_count: int = 1,
 ) -> Iterator[dict[str, Any]]:
     """Yield answer deltas, followed by the finalized non-stream result."""
     client = _deepseek_client()
@@ -398,6 +456,7 @@ def deepseek_answer_stream(
                 question,
                 hits,
                 conversation_context,
+                required_source_count=required_source_count,
             ),
         )
     except Exception as exc:

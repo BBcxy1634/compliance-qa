@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import json
 import re
 import time
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, Iterator, Literal, Protocol, TypedDict
 
 from langgraph.config import get_stream_writer
 from langgraph.graph import END, START, StateGraph
 
-from src.config import DEEPSEEK_MAX_TOKENS
+from src.config import DEEPSEEK_MAX_TOKENS, DEFAULT_CHUNKS_PATH
 from src.generate import (
     REFUSAL_TEXT,
     assess_evidence as evaluate_evidence,
@@ -90,7 +92,10 @@ HIGH_RISK_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
         "counterfeit_ip",
         re.compile(
             r"假冒|仿冒|假货|侵权|商标|版权|专利|盗版|"
-            r"counterfeit|trademark|copyright|patent|infring",
+            r"counterfeit|trademark|copyright|patent|infring|"
+            r"without permission.*(?:photo|logo|brand)|"
+            r"copied from.*without permission|parallel imports?|"
+            r"branded item",
             re.IGNORECASE,
         ),
     ),
@@ -99,7 +104,8 @@ HIGH_RISK_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
         re.compile(
             r"禁售|禁运|受限商品|危险品|产品安全|召回|儿童玩具|"
             r"医疗器械|药品|食品|农药|电池|hazmat|recall|product safety|"
-            r"restricted product|prohibited product",
+            r"restricted product|prohibited product|restricted adult items?|"
+            r"充电宝|power bank",
             re.IGNORECASE,
         ),
     ),
@@ -108,6 +114,10 @@ HIGH_RISK_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
         re.compile(
             r"关税|增值税|清关|海关|进口税|出口管制|制裁|"
             r"ofac|sanction|export control|embargo|customs|tariff|"
+            r"出口退运|退（免）税|退\(免\)税|预退税|跨关区退货|"
+            r"退运.*(?:滞销|退货|原因|材料)|"
+            r"海外仓.*(?:备案|申报|退税|核算)|"
+            r"tax refund|overseas warehouse|"
             r"import duty|\bvat\b",
             re.IGNORECASE,
         ),
@@ -123,7 +133,8 @@ HIGH_RISK_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "penalty_liability",
         re.compile(
-            r"罚款|处罚|法律责任|承担责任|起诉|诉讼|赔偿|"
+            r"罚款|处罚|法律责任|法律后果|承担责任|起诉|诉讼|赔偿|"
+            r"legal consequence|"
             r"penalty|\bfine\b|liabil|litigation|lawsuit",
             re.IGNORECASE,
         ),
@@ -140,7 +151,12 @@ MULTI_HOP_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
     (
         "paired_question",
-        re.compile(r"和.{0,20}(?:分别|哪个|哪些|两者|各自)"),
+        re.compile(
+            r"和.{0,20}(?:分别|哪个|哪些|两者|各自)|"
+            r"是否.*(?:等于|意味着)|"
+            r"(?:变化|变更).*(?:又|还|以及)|"
+            r"(?:又|还).*(?:变化|变更)"
+        ),
     ),
 )
 SPLIT_PATTERN = re.compile(
@@ -166,7 +182,7 @@ def _multi_hop_reasons(question: str) -> list[str]:
     if ";" in question or "；" in question:
         reasons.append("multi_hop:semicolon")
     if re.search(r"\band\b", question, re.IGNORECASE) and re.search(
-        r"policy|require|violat|rule|obligation|areas?",
+        r"polic(?:y|ies)|require|violat|rule|obligation|areas?",
         question,
         re.IGNORECASE,
     ):
@@ -262,6 +278,68 @@ def _chunk_key(chunk: dict[str, Any], fallback_index: int) -> str:
 
 def _source_key(chunk: dict[str, Any]) -> str:
     return str(chunk.get("source_id") or chunk.get("source") or "")
+
+
+@lru_cache(maxsize=1)
+def _adjacent_chunk_map() -> dict[str, list[dict[str, Any]]]:
+    if not DEFAULT_CHUNKS_PATH.exists():
+        return {}
+    chunks = [
+        json.loads(line)
+        for line in DEFAULT_CHUNKS_PATH.read_text(
+            encoding="utf-8"
+        ).splitlines()
+        if line.strip()
+    ]
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for chunk in chunks:
+        chunk_id = str(chunk.get("chunk_id", ""))
+        if "#" not in chunk_id:
+            continue
+        prefix = chunk_id.rsplit("#", 1)[0]
+        groups.setdefault(prefix, []).append(chunk)
+    for group in groups.values():
+        group.sort(key=lambda item: str(item.get("chunk_id", "")))
+    return groups
+
+
+def _expand_adjacent_hits(
+    hits: list[dict[str, Any]],
+    *,
+    max_parents: int = 3,
+) -> list[dict[str, Any]]:
+    catalog = _adjacent_chunk_map()
+    if not catalog:
+        return hits
+    expanded = list(hits)
+    seen = {
+        str(item["chunk"].get("chunk_id", ""))
+        for item in expanded
+        if isinstance(item, dict) and isinstance(item.get("chunk"), dict)
+    }
+    for item in hits[:max_parents]:
+        chunk = item.get("chunk", {})
+        chunk_id = str(chunk.get("chunk_id", ""))
+        if "#" not in chunk_id:
+            continue
+        prefix = chunk_id.rsplit("#", 1)[0]
+        for neighbor in catalog.get(prefix, []):
+            neighbor_id = str(neighbor.get("chunk_id", ""))
+            if not neighbor_id or neighbor_id in seen:
+                continue
+            expanded.append(
+                {
+                    "chunk": dict(neighbor),
+                    "score": round(float(item["score"]) * 0.98, 6),
+                }
+            )
+            seen.add(neighbor_id)
+            break
+    return sorted(
+        expanded,
+        key=lambda item: float(item["score"]),
+        reverse=True,
+    )
 
 
 def _writer_event(event: str, data: dict[str, Any]) -> None:
@@ -386,8 +464,20 @@ def build_agent_graph(deps: GraphDependencies):
         fallback_index = 0
         for query in state["retrieval_queries"]:
             query_started = time.perf_counter()
+            wide_retrieval = (
+                state["route"]["route"] in {"high_risk", "multi_hop"}
+                or re.search(
+                    r"多少项|哪些|分别|增加|删除|清单|列表",
+                    query,
+                )
+            )
             outcome = tool_runtime.search_sources(
-                SearchSourcesInput(query=query, top_k=deps.top_k)
+                SearchSourcesInput(
+                    query=query,
+                    top_k=max(deps.top_k, 10)
+                    if wide_retrieval
+                    else deps.top_k,
+                )
             )
             tool_calls.append(_tool_trace(outcome))
             if isinstance(outcome, ToolFailure):
@@ -416,6 +506,7 @@ def build_agent_graph(deps: GraphDependencies):
             key=lambda item: item["score"],
             reverse=True,
         )
+        evidence_hits = _expand_adjacent_hits(evidence_hits)
         tool_calls = _metadata_tool_calls(
             state,
             tool_runtime,
@@ -456,8 +547,10 @@ def build_agent_graph(deps: GraphDependencies):
             assessment = evaluate_evidence(
                 result["query"],
                 hits,
+                max_hits=10,
                 min_score=_min_score(deps.backend),
                 enforce_term_coverage=deps.backend == "bm25",
+                require_term_coverage=False,
                 backend=deps.backend,
             )
             if not assessment.sufficient:
@@ -468,6 +561,28 @@ def build_agent_graph(deps: GraphDependencies):
                     _chunk_key(hit.chunk, len(strong_hits) + 1),
                     _hit_to_dict(hit),
                 )
+        if not failure_reason:
+            aggregate_hits = sorted(
+                (_hit_from_dict(item) for item in strong_hits.values()),
+                key=lambda hit: hit.score,
+                reverse=True,
+            )
+            aggregate = evaluate_evidence(
+                state["question"],
+                aggregate_hits,
+                max_hits=20,
+                min_score=_min_score(deps.backend),
+                enforce_term_coverage=deps.backend == "bm25",
+                require_term_coverage=True,
+                backend=deps.backend,
+            )
+            if not aggregate.sufficient:
+                failure_reason = f"aggregate:{aggregate.reason}"
+            else:
+                strong_hits = {
+                    _chunk_key(hit.chunk, index): _hit_to_dict(hit)
+                    for index, hit in enumerate(aggregate.strong_hits, 1)
+                }
         source_count = len(
             {
                 _source_key(item["chunk"])
@@ -516,9 +631,19 @@ def build_agent_graph(deps: GraphDependencies):
         hits = [_hit_from_dict(item) for item in state["evidence_hits"]]
         kwargs = {
             "thinking": deps.thinking,
+            "required_source_count": state["route"][
+                "required_source_count"
+            ],
             "conversation_context": state.get("conversation_context", {}),
             **(
-                {"max_tokens": deps.max_tokens}
+                {
+                    "max_tokens": (
+                        max(deps.max_tokens, 900)
+                        if state["route"]["route"]
+                        in {"multi_hop", "high_risk"}
+                        else deps.max_tokens
+                    )
+                }
                 if deps.max_tokens is not None
                 else {}
             ),
@@ -548,6 +673,105 @@ def build_agent_graph(deps: GraphDependencies):
                     hits,
                     **kwargs,
                 )
+                used_citations = filter_used_citations(
+                    str(result.get("answer", "")),
+                    list(result.get("citations", [])),
+                    refused=bool(result.get("refused")),
+                )
+                used_source_count = len(
+                    {_source_key(citation) for citation in used_citations}
+                )
+                needs_fallback = bool(result.get("refused")) or (
+                    state["route"]["route"] == "high_risk"
+                    and used_source_count
+                    < state["route"]["required_source_count"]
+                ) or any(
+                    marker in str(result.get("answer", ""))
+                    for marker in (
+                        "无法确认",
+                        "未找到相关依据",
+                        "未找到关于",
+                        "未能找到",
+                        "未直接说明",
+                        "无法回答",
+                    )
+                )
+                if needs_fallback:
+                    repaired = deepseek_answer(
+                        state["question"],
+                        hits,
+                        thinking=deps.thinking,
+                        max_tokens=max(
+                            deps.max_tokens or DEEPSEEK_MAX_TOKENS,
+                            900,
+                        ),
+                        conversation_context=state.get(
+                            "conversation_context",
+                            {},
+                        ),
+                        repair=True,
+                        required_source_count=state["route"][
+                            "required_source_count"
+                        ],
+                    )
+                    repaired_citations = filter_used_citations(
+                        str(repaired.get("answer", "")),
+                        list(repaired.get("citations", [])),
+                        refused=bool(repaired.get("refused")),
+                    )
+                    repaired_sources = len(
+                        {
+                            _source_key(citation)
+                            for citation in repaired_citations
+                        }
+                    )
+                    if (
+                        not repaired.get("refused")
+                        and (
+                            state["route"]["route"] != "high_risk"
+                            or repaired_sources
+                            >= state["route"]["required_source_count"]
+                        )
+                    ):
+                        result = {
+                            **repaired,
+                            "repair_generation": True,
+                        }
+                    else:
+                        fallback = extractive_answer(
+                            state["question"],
+                            hits,
+                            min_score=_min_score(deps.backend),
+                            enforce_term_coverage=deps.backend == "bm25",
+                            backend=deps.backend,
+                            max_hits=10,
+                            assume_sufficient=True,
+                        )
+                        fallback_citations = filter_used_citations(
+                            str(fallback.get("answer", "")),
+                            list(fallback.get("citations", [])),
+                            refused=bool(fallback.get("refused")),
+                        )
+                        fallback_source_count = len(
+                            {
+                                _source_key(citation)
+                                for citation in fallback_citations
+                            }
+                        )
+                        fallback_safe = (
+                            not fallback.get("refused")
+                            and (
+                                state["route"]["route"] != "high_risk"
+                                or fallback_source_count
+                                >= state["route"]["required_source_count"]
+                            )
+                        )
+                        if fallback_safe:
+                            result = {
+                                **fallback,
+                                "model": result.get("model"),
+                                "fallback_from_refusal": True,
+                            }
         else:
             result = extractive_answer(
                 state["question"],
@@ -575,6 +799,12 @@ def build_agent_graph(deps: GraphDependencies):
                 "compose_answer",
                 generation_mode=deps.generation_mode,
                 generation_ms=round(generation_ms, 2),
+                fallback_from_refusal=bool(
+                    result.get("fallback_from_refusal")
+                ),
+                repair_generation=bool(
+                    result.get("repair_generation")
+                ),
             ),
         }
 

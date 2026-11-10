@@ -11,6 +11,7 @@ import pytest
 import src.agent_graph as agent_graph
 from src.agent_graph import (
     GraphDependencies,
+    _expand_adjacent_hits,
     answer_with_graph,
     build_agent_graph,
     classify_route,
@@ -31,11 +32,13 @@ class StubRetriever:
         self.hits_by_query = hits_by_query or {}
         self.default_hits = default_hits or []
         self.questions: list[str] = []
+        self.top_k_values: list[int] = []
         self.last_timing_ms = {"stub_ms": 1.0}
 
     def search(self, query: str, *, top_k: int) -> list[SearchHit]:
-        assert top_k == 5
+        assert top_k in {5, 10}
         self.questions.append(query)
+        self.top_k_values.append(top_k)
         return self.hits_by_query.get(query, self.default_hits)
 
 
@@ -109,6 +112,27 @@ def _dependencies(
     )
 
 
+def test_adjacent_chunk_expansion_adds_same_page_neighbor(
+    monkeypatch,
+) -> None:
+    first = {"chunk_id": "source#p01#c01", "text": "first"}
+    second = {"chunk_id": "source#p01#c02", "text": "second"}
+    monkeypatch.setattr(
+        agent_graph,
+        "_adjacent_chunk_map",
+        lambda: {"source#p01": [first, second]},
+    )
+
+    expanded = _expand_adjacent_hits(
+        [{"chunk": first, "score": 0.9}]
+    )
+
+    assert [item["chunk"]["chunk_id"] for item in expanded] == [
+        "source#p01#c01",
+        "source#p01#c02",
+    ]
+
+
 @pytest.mark.parametrize(
     ("question", "rule_id"),
     [
@@ -128,6 +152,41 @@ def test_high_risk_rule_taxonomy(
     assert decision["route"] == "high_risk"
     assert f"high_risk:{rule_id}" in decision["reasons"]
     assert decision["required_source_count"] == 2
+
+
+@pytest.mark.parametrize(
+    ("question", "route"),
+    [
+        (
+            "Can an eBay seller use product photos copied from "
+            "another website without permission?",
+            "high_risk",
+        ),
+        ("Are parallel imports always allowed on eBay?", "high_risk"),
+        (
+            "Must logos on an authentic branded item be visible in "
+            "eBay listing photos?",
+            "high_risk",
+        ),
+        ("充电宝出口加拿大需要哪些运输标签？", "high_risk"),
+        ("出口海外仓预退税的核算期是什么时间段？", "high_risk"),
+        (
+            "亚马逊卖家承认违规后，当前申诉形式发生了什么变化，"
+            "还需要覆盖哪些内容？",
+            "multi_hop",
+        ),
+        (
+            "How do the feedback and offensive materials policies apply?",
+            "multi_hop",
+        ),
+        (
+            "商品被列入零售进口清单，是否就等于可以直接进口销售？",
+            "multi_hop",
+        ),
+    ],
+)
+def test_route_regressions_for_phase6(question: str, route: str) -> None:
+    assert classify_route(question, "bge_m3")["route"] == route
 
 
 def test_simple_fact_uses_fast_route_and_records_decisions(
@@ -206,6 +265,55 @@ def test_multi_hop_question_is_split_without_reranking(
     assert retrieve_trace["query_count"] == 2
 
 
+def test_multi_hop_uses_aggregate_evidence_across_subqueries(
+    monkeypatch,
+) -> None:
+    question = (
+        "Amazon return policy and listing description policy: "
+        "which two policy areas apply?"
+    )
+    retriever = StubRetriever(
+        hits_by_query={
+            "Amazon return policy": [
+                SearchHit(
+                    chunk={
+                        "chunk_id": "return-1",
+                        "source_id": "return-policy",
+                        "source": "return-policy.md",
+                        "text": "Amazon return policy",
+                    },
+                    score=0.4,
+                )
+            ],
+            "listing description policy: which two policy areas apply": [
+                SearchHit(
+                    chunk={
+                        "chunk_id": "description-1",
+                        "source_id": "description-policy",
+                        "source": "description-policy.md",
+                        "text": "listing description policy",
+                    },
+                    score=0.4,
+                )
+            ],
+        }
+    )
+    monkeypatch.setattr(
+        agent_graph,
+        "deepseek_answer",
+        lambda *_args, **_kwargs: _generated(
+            "Both policies apply [C1][C2].",
+            "return-policy",
+            "description-policy",
+        ),
+    )
+
+    result = answer_with_graph(question, _dependencies(retriever))
+
+    assert result["evidence_sufficient"] is True
+    assert result["refused"] is False
+
+
 def test_high_risk_requires_two_distinct_sources(
     monkeypatch,
 ) -> None:
@@ -264,6 +372,38 @@ def test_high_risk_accepts_two_sources_when_both_are_cited(
     ]
 
 
+def test_high_risk_counts_sources_beyond_first_three_hits(
+    monkeypatch,
+) -> None:
+    question = "Amazon 是否允许销售假冒商品？"
+    retriever = StubRetriever(
+        default_hits=[
+            _hit("source-1", chunk_id=f"source-1-{index}")
+            for index in range(6)
+        ]
+        + [
+            _hit("source-2", chunk_id=f"source-2-{index}")
+            for index in range(2)
+        ]
+    )
+    monkeypatch.setattr(
+        agent_graph,
+        "deepseek_answer",
+        lambda *_args, **_kwargs: _generated(
+            "不允许 [C1][C2]。",
+            "source-1",
+            "source-2",
+        ),
+    )
+
+    result = answer_with_graph(question, _dependencies(retriever))
+
+    assert result["evidence_sufficient"] is True
+    assert result["sufficient_source_count"] == 2
+    assert result["refused"] is False
+    assert retriever.top_k_values == [10]
+
+
 def test_high_risk_refuses_when_final_answer_cites_one_source(
     monkeypatch,
 ) -> None:
@@ -309,6 +449,61 @@ def test_insufficient_evidence_refuses_without_generation(
     assert result["answer"] == REFUSAL_TEXT
     assert result["citations"] == []
     assert result["route_trace"][-1]["node"] == "verify_citations_or_refuse"
+
+
+def test_deepseek_refusal_falls_back_to_extractive_answer(
+    monkeypatch,
+) -> None:
+    retriever = StubRetriever(
+        default_hits=[
+            _hit(
+                "source-1",
+                chunk_id="source-1",
+            )
+        ]
+    )
+    calls: list[bool] = []
+
+    def fake_answer(*_args, **kwargs):
+        calls.append(bool(kwargs.get("repair")))
+        if kwargs.get("repair"):
+            return {
+                "answer": "Policy requirement [C1].",
+                "refused": False,
+                "citations": [
+                    {
+                        "citation_id": "C1",
+                        "source_id": "source-1",
+                        "source": "source-1.md",
+                    }
+                ],
+                "mode": "deepseek",
+                "model": "stub-model",
+            }
+        return {
+            "answer": REFUSAL_TEXT,
+            "refused": True,
+            "citations": [],
+            "mode": "deepseek",
+            "model": "stub-model",
+        }
+
+    monkeypatch.setattr(agent_graph, "deepseek_answer", fake_answer)
+
+    result = answer_with_graph(
+        "What is the policy requirement?",
+        _dependencies(retriever),
+    )
+
+    assert result["refused"] is False
+    assert result["citations"]
+    assert calls == [False, True]
+    compose_trace = next(
+        item
+        for item in result["route_trace"]
+        if item["node"] == "compose_answer"
+    )
+    assert compose_trace["repair_generation"] is True
 
 
 def test_graph_state_is_json_serializable_and_records_route(

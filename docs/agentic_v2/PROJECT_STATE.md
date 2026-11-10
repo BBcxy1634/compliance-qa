@@ -10,8 +10,8 @@ Last updated: 2026-11-10
 | Current branch | `feat/agentic-v2` |
 | Base release | `v1.0.0` |
 | Base commit | `1ea2f4b9161b921d126466f86e69782bec9b34b1` |
-| Current V2 phase | Phase 5: packaging, CI, and release preparation complete locally |
-| V2 code status | Phase 5 implementation and documentation complete |
+| Current V2 phase | Phase 6: evidence and routing quality remediation complete |
+| V2 code status | Phase 6 quality target met; latency tradeoff documented |
 | Current release state | v1.0.0 is published; v2.0.0 release candidate is not tagged or published |
 
 ## V2 Goal
@@ -211,8 +211,9 @@ Results:
   review was not executed and was exempted by the project owner.
 - Docker is not installed on the current development machine, so the container
   build and runtime have not been executed.
-- The complete 150-question B1 Fast DeepSeek evaluation shows weak multi-hop
-  correctness and evidence sufficiency.
+- The complete 150-question B1 Fast DeepSeek evaluation now meets the 0.80
+  answer-correctness target, with multi-hop quality and latency still weaker
+  than the fact path.
 - Short-term sessions and local traces are process-local and do not support
   multi-replica coordination.
 - Current Gradio app is local and single-request oriented.
@@ -245,7 +246,7 @@ Results:
 - Original evaluation set: 60 questions, 40 fact, 10 multi-hop, 10 refusal.
 - Agentic evaluation set: 150 questions, 70 fact, 60 multi-hop, 20 refusal.
 - Expected routes: 68 simple fact, 47 high risk, 35 multi-hop.
-- Deterministic draft-label route accuracy: 136/150 (`0.9067`).
+- Deterministic draft-label route accuracy after Phase 6: 149/150 (`0.9933`).
 - All 24 official source records and Phase 4 evidence quotes validated.
 - Environment check passed with Python 3.13.2 and both Chroma collections.
 - The full paid DeepSeek evaluation was intentionally not run.
@@ -291,30 +292,70 @@ Validation performed on 2026-11-10:
 
 Results:
 
-- 94 full tests passed with local data and Chroma artifacts present.
-- 86 deterministic tests were selected with data-dependent tests excluded.
+- 110 full tests passed with local data and Chroma artifacts present.
+- 102 deterministic tests were selected with data-dependent tests excluded.
 - The synthetic evaluation smoke completed 3/3 questions.
 - Smoke refusal accuracy was 1.0 and route accuracy was 1.0.
 - GitHub Actions run `42826433942` passed both jobs for commit `e5ca1f5`.
 - Packaging tests parsed Compose and workflow YAML and checked the Dockerfile,
   Docker context, and fixture structure.
-- The full 150-question B1 Fast DeepSeek evaluation completed with 150
+- The Phase 6 150-question B1 Fast DeepSeek evaluation completed with 150
   successful and 0 failed requests.
 - Automatic evaluation results:
-  - original metrics: Hit@5 0.9846, citation accuracy 0.9868, answer
-    correctness 0.5385, refusal accuracy 1.0
-  - answer correctness by type: fact 0.7857, multi-hop 0.25, refusal 1.0
-  - route accuracy 0.9067, tool selection accuracy 1.0, tool success rate
-    0.9915, multi-step completion 0.2333, evidence sufficiency accuracy 0.6733
-  - P50 answer latency 1269.4 ms, P95 4192.54 ms
-- The final evaluation used 198,442 prompt tokens and 23,341 completion tokens.
-  At the recorded off-peak rates, estimated model cost was CNY 0.2918.
+  - original metrics: Hit@5 1.0, gold unit recall 0.9462, citation accuracy
+    1.0, answer correctness 0.8077, refusal accuracy 1.0
+  - answer correctness by type: fact 0.8286, multi-hop 0.7833, refusal 1.0
+  - answerable false refusals: 4
+  - route accuracy 0.9933, tool selection accuracy 1.0, tool success rate
+    0.9915, multi-step completion 0.75, evidence sufficiency accuracy 0.9867
+  - P50 answer latency 3085.76 ms, P95 10069.12 ms
+- Quality improvements include aggregate multi-hop evidence, entity anchors,
+  adjacent chunk expansion, route corrections, and bounded answer repair.
+- The final evaluation used 510,589 prompt tokens and 48,074 completion tokens.
+  At the recorded off-peak rates, estimated model cost was CNY 0.6917.
 - Docker is not installed locally, so `docker compose config`, image build, and
   service startup were not executed on this machine.
 
 The detailed operation and failure contract is in
 `docs/agentic_v2/DEPLOYMENT.md` and
 `docs/agentic_v2/LIMITATIONS_AND_FAILURES.md`.
+
+## Phase 6 Verification
+
+Phase 6 addresses the Phase 5 evidence-gate regression:
+
+- split-query keyword coverage is evaluated on aggregate evidence
+- entity anchors prevent generic term overlap from accepting unrelated policy
+- first three hits receive limited same-page adjacent chunk expansion
+- high-risk and multi-hop retrieval uses wider candidate sets
+- high-risk source counts use all strong candidates
+- explicit route regressions cover the 14 prior classifier errors
+- a bounded non-thinking repair follows refused, uncertain, or under-cited
+  sufficiently-evidenced answers
+
+Final full evaluation (`phase6_b1_fast_150`):
+
+| Metric | Result |
+|---|---:|
+| Successful / failed requests | 150 / 0 |
+| Hit@5 | 1.0000 |
+| Gold unit recall@5 | 0.9462 |
+| Citation accuracy | 1.0000 |
+| Answer correctness | 0.8077 |
+| Fact accuracy | 0.8286 |
+| Multi-hop accuracy | 0.7833 |
+| Refusal accuracy | 1.0000 |
+| Answerable false refusals | 4 |
+| Route accuracy | 0.9933 |
+| Tool selection accuracy | 1.0000 |
+| Tool success rate | 0.9915 |
+| Multi-step completion | 0.7500 |
+| Evidence sufficiency accuracy | 0.9867 |
+| Answer P50 / P95 | 3085.76 / 10069.12 ms |
+
+Estimated model cost at recorded off-peak rates was CNY 0.6917. The quality path
+exceeds the original Fast P95 target, so it is documented as a quality-first
+configuration rather than a latency benchmark replacement.
 
 ## Current Phase and Next Task
 

@@ -37,8 +37,8 @@ the released v1 CLI and Gradio paths.
 
 Phase 5 verification performed locally:
 
-- 94 full tests pass when ignored local data and Chroma artifacts are present.
-- 86 deterministic tests are selected with `-m "not data"`.
+- 110 full tests pass when ignored local data and Chroma artifacts are present.
+- 102 deterministic tests are selected with `-m "not data"`.
 - The synthetic BM25/extractive evaluation smoke passes 3/3 questions.
 - The smoke validates refusal accuracy 1.0 and route accuracy 1.0.
 - No DeepSeek call is made by the deterministic tests or smoke.
@@ -54,22 +54,22 @@ was executed. GitHub Actions run `42826433942` passed both jobs for commit
 - Original set: 60 approved questions.
 - Agentic set: 150 questions: 70 fact, 60 multi-hop, 20 refusal.
 - New Phase 4 labels: `draft`.
-- Deterministic route accuracy against draft labels: 136/150 (`0.9067`).
+- Deterministic route accuracy against draft labels: 149/150 (`0.9933`).
 - Independent human review: not executed and not represented as passed.
 - Full DeepSeek V2 evaluation: 150/150 requests completed, 0 failed.
-- Answer correctness: 0.5385 overall, 0.7857 fact, 0.25 multi-hop, 1.0 refusal.
-- Citation accuracy: 0.9868.
-- Agentic route accuracy: 0.9067.
+- Answer correctness: 0.8077 overall, 0.8286 fact, 0.7833 multi-hop, 1.0 refusal.
+- Citation accuracy: 1.0; answerable false refusals fell from 54 to 4.
+- Agentic route accuracy: 0.9933.
 - Tool selection accuracy: 1.0; tool success rate: 0.9915.
-- Multi-step completion: 0.2333; evidence sufficiency accuracy: 0.6733.
-- Estimated model cost at recorded off-peak rates: CNY 0.2918.
+- Multi-step completion: 0.75; evidence sufficiency accuracy: 0.9867.
+- Estimated model cost at recorded off-peak rates: CNY 0.6917.
 
 ## Performance Status
 
 The recorded 100-request B1 Fast benchmark remains the v1 reference: mean
 latency 1.92 seconds, P95 3.31 seconds, and mean cost about CNY 0.0010 per
-request. The Phase 5 full evaluation separately recorded V2 answer P50 of
-1269.4 ms and P95 of 4192.54 ms. It is an evaluation run, not a new 100-request
+request. The Phase 6 full evaluation separately recorded V2 answer P50 of
+3085.76 ms and P95 of 10069.12 ms. It is an evaluation run, not a new 100-request
 latency benchmark.
 
 ## Upgrade and Run
@@ -106,8 +106,8 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 ## Known Limitations
 
 - No human-approved V2 evaluation subset exists yet.
-- Multi-hop correctness and multi-step completion remain weak in the completed
-  automatic evaluation.
+- The quality-oriented path has a 10.07-second P95, so it is not a latency
+  benchmark replacement.
 - No new 100-request V2 benchmark has been run.
 - Policy version comparison needs a multi-snapshot corpus.
 - Sessions and traces are not shared across replicas.

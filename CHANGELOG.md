@@ -33,16 +33,19 @@ Status: release candidate prepared; Git tag and GitHub Release are not created.
 
 ### Verified
 
-- 94 automated tests pass with local data and vector artifacts present.
-- 86 deterministic tests are selected when data-dependent tests are excluded.
+- 110 automated tests pass with local data and vector artifacts present.
+- 102 deterministic tests are selected when data-dependent tests are excluded.
 - The synthetic BM25/extractive evaluation smoke passes 3/3 questions without a
   DeepSeek key or network model call.
 - GitHub Actions run `42826433942` passed both deterministic test and evaluation
   smoke jobs.
 - The full 150-question B1 Fast DeepSeek evaluation completed with 150
   successful and 0 failed requests.
-- The evaluation recorded route accuracy 0.9067, tool selection accuracy 1.0,
-  tool success rate 0.9915, and answer correctness 0.5385.
+- Phase 6 evidence, routing, and repair changes raised answer correctness to
+  0.8077, multi-hop correctness to 0.7833, route accuracy to 0.9933,
+  evidence sufficiency accuracy to 0.9867, and multi-step completion to 0.75.
+- The final run had 4 answerable false refusals, citation accuracy 1.0, and
+  refusal accuracy 1.0.
 - Python YAML parsing and packaging tests validate the Compose, Dockerfile,
   Docker context, workflow, and smoke fixture structure.
 
@@ -50,8 +53,8 @@ Status: release candidate prepared; Git tag and GitHub Release are not created.
 
 - Docker was not executed in the current local environment.
 - Independent human review has not been completed for the V2 question labels.
-- The full V2 automatic evaluation shows weak multi-hop correctness and evidence
-  sufficiency; these are documented as current limitations.
+- The quality-oriented path increased answer P95 to 10.07 seconds; this
+  tradeoff is documented.
 - Existing benchmark latency and cost results are v1 reference measurements,
   not a new V2 paid benchmark.
 

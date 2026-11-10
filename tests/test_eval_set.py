@@ -111,4 +111,4 @@ def test_agentic_route_accuracy_meets_phase_target() -> None:
         for question in questions
     )
 
-    assert round(correct / len(questions), 4) == 0.9067
+    assert round(correct / len(questions), 4) >= 0.95

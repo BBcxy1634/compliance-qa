@@ -126,6 +126,21 @@ Runtime dependencies and retriever objects are not part of state.
 Evidence assessment reuses the existing extractive rules without changing
 thresholds, year coverage, or query-term coverage.
 
+Phase 6 adds four bounded evidence controls:
+
+- each split query must have a strong hit, but keyword coverage is evaluated
+  across the aggregate evidence set rather than independently per fragment
+- Latin acronyms and policy-domain anchors such as `CBAM`, `GST`, or `包装法`
+  must occur in the evidence
+- the first three hits receive at most one same-page adjacent chunk expansion
+- high-risk and multi-hop retrieval uses Top 10 candidates, and high-risk source
+  count is computed across all strong candidates, not only the first three
+
+When evidence is sufficient but DeepSeek refuses, returns an uncertain partial
+answer, or cites too few sources for a high-risk answer, one non-thinking repair
+generation is attempted with an explicit subquestion and citation instruction.
+Only if that still fails does the graph use a preassessed extractive fallback.
+
 - No strong evidence: refuse before generation.
 - Multi-hop: every split query must have sufficient evidence.
 - High-risk: strong evidence must come from at least two distinct `source_id`

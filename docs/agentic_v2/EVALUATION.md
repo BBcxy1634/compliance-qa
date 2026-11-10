@@ -28,8 +28,8 @@ All answerable records reference existing chunks. Every `gold_evidence.quote`
 must occur exactly in the referenced chunk text. Multi-hop records must cover
 at least two distinct sources.
 
-The deterministic route classifier currently matches 136 of 150 draft route
-labels (`0.9067`). This value does not call a model or use the network.
+The deterministic route classifier currently matches 149 of 150 draft route
+labels (`0.9933`). This value does not call a model or use the network.
 
 ## Human Review Status
 
@@ -150,30 +150,30 @@ Run the optional B3 comparison:
   --run-name phase4_b3_deepseek
 ```
 
-Phase 5 ran the full evaluation as `phase5_b1_fast_150` in a network-approved
+Phase 6 ran the final full evaluation as `phase6_b1_fast_150` in a network-approved
 environment.
 
 | Metric | Result |
 |---|---:|
 | Successful / failed requests | 150 / 0 |
-| Hit@5 | 0.9846 |
-| Gold unit recall@5 | 0.8949 |
-| Citation accuracy | 0.9868 |
-| Answer correctness | 0.5385 |
-| Fact / multi-hop / refusal accuracy | 0.7857 / 0.2500 / 1.0000 |
-| Route accuracy | 0.9067 |
+| Hit@5 | 1.0000 |
+| Gold unit recall@5 | 0.9462 |
+| Citation accuracy | 1.0000 |
+| Answer correctness | 0.8077 |
+| Fact / multi-hop / refusal accuracy | 0.8286 / 0.7833 / 1.0000 |
+| Route accuracy | 0.9933 |
 | Tool selection accuracy | 1.0000 |
 | Tool success rate | 0.9915 |
-| Multi-step completion | 0.2333 |
-| Evidence sufficiency accuracy | 0.6733 |
+| Multi-step completion | 0.7500 |
+| Evidence sufficiency accuracy | 0.9867 |
 
 The `deepseek_auto` correctness source covered all 130 answerable questions.
 There is still no independent human review. At the recorded off-peak rates,
-198,442 prompt tokens and 23,341 completion tokens correspond to an estimated
-CNY 0.2918 model cost.
+510,589 prompt tokens and 48,074 completion tokens correspond to an estimated
+CNY 0.6917 model cost.
 
-The primary quality gap is multi-hop evidence sufficiency and completion. The
-result is recorded in `eval/results/phase5_b1_fast_150/summary.json`.
+Answerable false refusals fell from 54 to 4. The result is recorded in
+`eval/results/phase6_b1_fast_150/summary.json`.
 
 ## Outputs
 

@@ -87,6 +87,67 @@ def test_evidence_assessment_preserves_year_coverage_rule() -> None:
     assert result.reason == "query_year_not_covered"
 
 
+def test_evidence_assessment_uses_combined_hits_and_date_metadata() -> None:
+    hits = [
+        SearchHit(
+            chunk={
+                "text": "2026 policy requirements for sellers",
+                "updated_at": "2025-01-01",
+            },
+            score=0.4,
+        ),
+        SearchHit(
+            chunk={
+                "text": "Effective 2026 policy requirements",
+                "updated_at": "2026-01-01",
+            },
+            score=0.3,
+        ),
+    ]
+
+    result = generate.assess_evidence(
+        "2026 policy requirements",
+        hits,
+        min_score=0.25,
+        backend="bge_m3",
+    )
+
+    assert result.sufficient is True
+
+
+def test_evidence_assessment_rejects_missing_entity_anchor() -> None:
+    hit = SearchHit(
+        chunk={"text": "2026 seller requirements and registration threshold"},
+        score=0.8,
+    )
+
+    result = generate.assess_evidence(
+        "What is the 2026 GST registration threshold?",
+        [hit],
+        min_score=0.25,
+        backend="bge_m3",
+    )
+
+    assert result.sufficient is False
+    assert result.reason == "term_coverage_missing"
+
+
+def test_evidence_assessment_detects_acronym_after_chinese_text() -> None:
+    hit = SearchHit(
+        chunk={"text": "2026 registration threshold and seller requirements"},
+        score=0.8,
+    )
+
+    result = generate.assess_evidence(
+        "新加坡GST在2026年的注册门槛是多少？",
+        [hit],
+        min_score=0.25,
+        backend="bge_m3",
+    )
+
+    assert result.sufficient is False
+
+
 def test_deepseek_stream_yields_deltas_and_filters_done_citations(
     monkeypatch,
 ) -> None:
@@ -148,6 +209,43 @@ def test_deepseek_stream_yields_deltas_and_filters_done_citations(
     assert [item["citation_id"] for item in result["citations"]] == ["C2"]
     assert result["model"] == "stub-model"
     assert result["usage"]["total_tokens"] == 14
+
+
+def test_deepseek_prompt_requests_two_sources_for_high_risk(
+    monkeypatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    class FakeCompletions:
+        def create(self, **kwargs: Any):
+            captured.update(kwargs)
+            return SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        message=SimpleNamespace(content="答案 [C1][C2]")
+                    )
+                ],
+                model="stub-model",
+                usage=None,
+            )
+
+    class FakeClient:
+        def __init__(self, **_kwargs: Any) -> None:
+            self.chat = SimpleNamespace(
+                completions=FakeCompletions(),
+            )
+
+    monkeypatch.setattr(generate, "DEEPSEEK_API_KEY", "test-key")
+    monkeypatch.setattr("openai.OpenAI", FakeClient)
+
+    generate.deepseek_answer(
+        "高风险问题",
+        _hits(),
+        required_source_count=2,
+    )
+
+    user_message = captured["messages"][1]["content"]
+    assert "至少 2 个不同来源" in user_message
 
 
 def test_rag_stream_uses_shared_retrieval_and_emits_contract_events(

@@ -276,7 +276,7 @@ Phase 5 verification (2026-11-10):
   output use named volumes.
 - The image runs as a non-root user with pre-created writable cache and Trace
   directories.
-- Deterministic CI tests use `-m "not data"`; 86 tests are selected without
+- Deterministic CI tests use `-m "not data"`; 102 tests are selected without
   ignored local corpus or Chroma artifacts.
 - The evaluation smoke uses synthetic fixture chunks, BM25, extractive
   generation, and `--judge none`; it executes no DeepSeek request.
@@ -286,14 +286,47 @@ Phase 5 verification (2026-11-10):
 - GitHub Actions run `42826433942` passed both jobs.
 - The complete 150-question B1 Fast DeepSeek evaluation passed with 150
   successful and 0 failed requests.
-- Automatic answer correctness is 0.5385; multi-hop correctness is 0.25, making
-  retrieval sufficiency for multi-hop questions the primary known gap.
+- Phase 6 fixed aggregate multi-hop evidence, entity anchoring, adjacent chunks,
+  route coverage, and bounded answer repair.
+- Final automatic answer correctness is 0.8077; multi-hop correctness is 0.7833.
+- Answerable false refusals fell from 54 to 4.
 - Compose, Dockerfile, Docker context, workflow, and fixture structure are
   covered by static packaging tests.
 - Docker is not installed on the current machine, so no container build or
   startup is claimed.
 - `VERSION`, README, architecture, deployment, limitation/failure, changelog,
   and v2.0.0 release-note drafts are updated.
+
+## Phase 6: Evidence and Routing Quality Remediation
+
+Status: complete
+
+Goal:
+
+Recover answer correctness and false-refusal quality without changing evaluation
+labels or metric definitions.
+
+Delivered:
+
+- aggregate multi-hop evidence assessment
+- entity-aware relevance anchors
+- same-page adjacent chunk expansion
+- wider high-risk and multi-hop retrieval
+- high-risk source counting across all strong candidates
+- bounded non-thinking repair generation
+- route regression corrections
+
+Final verification:
+
+- 110 full tests passed; 102 no-data tests passed.
+- Answer correctness improved from 0.5385 to 0.8077.
+- Answerable false refusals fell from 54 to 4.
+- Multi-hop correctness improved from 0.25 to 0.7833.
+- Citation accuracy and refusal accuracy reached 1.0.
+- Route accuracy reached 0.9933.
+- Evidence sufficiency accuracy reached 0.9867.
+- Multi-step completion reached 0.75.
+- Quality-first answer P95 is 10.07 seconds, an explicit latency tradeoff.
 
 ## Overall Success Criteria
 
