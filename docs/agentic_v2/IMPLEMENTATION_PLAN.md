@@ -242,8 +242,7 @@ Phase 4 verification (2026-11-10):
 
 ## Phase 5: Packaging, CI, and Release
 
-Status: complete in the repository; external Docker runtime and remote GitHub
-Actions execution remain approval-dependent
+Status: complete; v2.0.0 released on 2026-11-11
 
 Goal:
 

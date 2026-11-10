@@ -1,6 +1,6 @@
 # Agentic Compliance Copilot v2 Project State
 
-Last updated: 2026-11-10
+Last updated: 2026-11-11
 
 ## Repository Snapshot
 
@@ -12,7 +12,7 @@ Last updated: 2026-11-10
 | Base commit | `1ea2f4b9161b921d126466f86e69782bec9b34b1` |
 | Current V2 phase | Phase 6: evidence and routing quality remediation complete |
 | V2 code status | Phase 6 quality target met; latency tradeoff documented |
-| Current release state | v1.0.0 is published; v2.0.0 release candidate is not tagged or published |
+| Current release state | v2.0.0 released on 2026-11-11 |
 
 ## V2 Goal
 
@@ -371,13 +371,10 @@ incremental token deltas. The `done` event contains only citations whose IDs
 occur in the complete answer body. Refusals always return `refused=true` and no
 citations.
 
-The repository now includes Docker Compose packaging, a GitHub Actions workflow,
-and v2.0.0 release notes. These actions still require explicit approval:
-
-- run an actual Docker build and health check on a Docker-enabled machine
-- decide whether independent human review is required before release
-- create the `v2.0.0` tag and GitHub Release
-- merge the branch to `master`
+The repository includes Docker Compose packaging, a GitHub Actions workflow,
+and published v2.0.0 release notes. Docker runtime remains intentionally
+unverified on the local machine. Independent human review remains incomplete
+and is disclosed in the release notes.
 
 The API contract is documented in `docs/agentic_v2/API.md`. The graph contract
 is documented in `docs/agentic_v2/GRAPH.md`. Tool and session contracts are

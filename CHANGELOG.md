@@ -2,9 +2,9 @@
 
 All notable project changes are documented in this file.
 
-## [2.0.0] - 2026-11-10
+## [2.0.0] - 2026-11-11
 
-Status: release candidate prepared; Git tag and GitHub Release are not created.
+Status: released.
 
 ### Added
 

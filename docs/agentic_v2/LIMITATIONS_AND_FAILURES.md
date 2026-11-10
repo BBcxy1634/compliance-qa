@@ -60,9 +60,11 @@ still required before making a new throughput claim.
 
 ## Release Boundary
 
-Phase 5 prepares packaging and documentation only. It does not:
+v2.0.0 is released without:
 
 - mark draft labels as human-approved
-- claim that GitHub Actions passed before it runs
 - claim actual Docker startup on a machine without Docker
-- create a tag, push a branch, merge `master`, or publish a GitHub Release
+- claim a new V2 100-request latency benchmark
+
+GitHub Actions passed for the release commit, and v1/v2 release provenance is
+preserved in Git tags and release notes.

@@ -1,6 +1,6 @@
 # 跨境卖家合规问答助手
 
-**Version 2.0.0 release candidate** · [已发布 v1.0.0](https://github.com/BBcxy1634/compliance-qa/releases/tag/v1.0.0)
+**Version 2.0.0** · [GitHub Release](https://github.com/BBcxy1634/compliance-qa/releases/tag/v2.0.0) · [v1.0.0](https://github.com/BBcxy1634/compliance-qa/releases/tag/v1.0.0)
 
 一个可追溯的 RAG 项目：从 7 份自建 PPT、Amazon/eBay 官方政策和海关监管文件中检索依据，生成带来源和页码的合规答案；证据不足时明确拒答。
 

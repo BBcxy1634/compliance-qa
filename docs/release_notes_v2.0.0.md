@@ -2,8 +2,7 @@
 
 ## Status
 
-Prepared as a release candidate on 2026-11-10. The Git tag and GitHub Release
-have not been created. Publishing requires explicit project-owner approval.
+Released on 2026-11-11.
 
 ## Summary
 
@@ -95,13 +94,13 @@ docker compose up --build -d
 Invoke-RestMethod http://127.0.0.1:8000/health
 ```
 
-## Release Actions Requiring Approval
+## Release Verification
 
-- Run the GitHub Actions workflow after pushing the branch or opening a PR.
-- Run an actual Docker build and startup on a Docker-enabled machine.
-- Decide whether draft labels need independent human review before release.
-- Create the `v2.0.0` tag and GitHub Release.
-- Merge to `master`.
+- GitHub Actions run `42845638249` passed both jobs.
+- The release branch is merged to `master`.
+- Git tag and GitHub Release are `v2.0.0`.
+- Docker runtime is intentionally unverified on the local machine.
+- Independent human review of draft labels remains incomplete.
 
 ## Known Limitations
 
