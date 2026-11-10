@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Iterator
 
 from src.config import (
     DEEPSEEK_API_KEY,
@@ -16,6 +16,7 @@ from src.schemas import SearchHit
 
 
 REFUSAL_TEXT = "文档中未找到足够依据，暂时无法回答这个问题。"
+CITATION_PATTERN = re.compile(r"\[C(\d+)\]")
 HEADING_ONLY_LINES = {
     "What is the policy?",
     "Why does eBay have this policy?",
@@ -33,6 +34,10 @@ SYSTEM_PROMPT = """你是跨境卖家合规问答助手。
 回答必须完整覆盖问题所需事实，但要精炼，避免重复、复述整段资料和无关背景。"""
 
 
+class ModelGenerationError(RuntimeError):
+    """Public generation failure without provider-specific details."""
+
+
 def _citation(chunk: dict[str, Any]) -> dict[str, Any]:
     page = chunk.get("page")
     if page is None:
@@ -48,6 +53,25 @@ def _citation(chunk: dict[str, Any]) -> dict[str, Any]:
         "url": chunk.get("url", ""),
         "chunk_id": chunk.get("chunk_id", ""),
     }
+
+
+def filter_used_citations(
+    answer: str,
+    citations: list[dict[str, Any]],
+    *,
+    refused: bool = False,
+) -> list[dict[str, Any]]:
+    """Keep only citations whose IDs appear in the final answer body."""
+    if refused:
+        return []
+    used_ids = {
+        f"C{number}" for number in CITATION_PATTERN.findall(answer or "")
+    }
+    return [
+        citation
+        for citation in citations
+        if citation.get("citation_id") in used_ids
+    ]
 
 
 def _candidate_sentences(text: str) -> list[str]:
@@ -163,41 +187,55 @@ def build_context(hits: list[SearchHit]) -> str:
     return "\n\n".join(blocks)
 
 
-def deepseek_answer(
-    question: str,
+def _deepseek_messages(question: str, hits: list[SearchHit]) -> list[dict[str, str]]:
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": f"问题：{question}\n\n检索片段：\n{build_context(hits)}",
+        },
+    ]
+
+
+def _deepseek_client() -> Any:
+    if not DEEPSEEK_API_KEY:
+        raise ModelGenerationError("DeepSeek API key is not configured.")
+    try:
+        from openai import OpenAI
+
+        return OpenAI(
+            api_key=DEEPSEEK_API_KEY,
+            base_url=DEEPSEEK_BASE_URL,
+        )
+    except Exception as exc:
+        raise ModelGenerationError("Failed to initialize the model client.") from exc
+
+
+def _usage_payload(usage: Any) -> dict[str, Any]:
+    if usage is None:
+        return {}
+    if hasattr(usage, "model_dump"):
+        return usage.model_dump()
+    return {
+        "prompt_tokens": getattr(usage, "prompt_tokens", None),
+        "completion_tokens": getattr(usage, "completion_tokens", None),
+        "total_tokens": getattr(usage, "total_tokens", None),
+    }
+
+
+def _deepseek_result(
+    answer: str,
     hits: list[SearchHit],
     *,
-    thinking: bool = True,
-    max_tokens: int = DEEPSEEK_MAX_TOKENS,
+    thinking: bool,
+    max_tokens: int,
+    model: str,
+    usage: dict[str, Any],
 ) -> dict[str, Any]:
-    """Generate an answer through the DeepSeek OpenAI-compatible API."""
-    if not DEEPSEEK_API_KEY:
-        raise RuntimeError(
-            "DEEPSEEK_API_KEY is not configured. Use --mode extractive "
-            "or add the key to .env."
-        )
-    from openai import OpenAI
-
-    client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
-        base_url=DEEPSEEK_BASE_URL,
-    )
-    response = client.chat.completions.create(
-        model=DEEPSEEK_MODEL,
-        temperature=0,
-        max_tokens=max_tokens,
-        extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": f"问题：{question}\n\n检索片段：\n{build_context(hits)}",
-            },
-        ],
-    )
-    answer = (response.choices[0].message.content or "").strip()
+    normalized_answer = answer.strip()
     refused = (
-        REFUSAL_TEXT in answer and len(answer) <= len(REFUSAL_TEXT) + 20
+        REFUSAL_TEXT in normalized_answer
+        and len(normalized_answer) <= len(REFUSAL_TEXT) + 20
     )
     citations = []
     if not refused:
@@ -206,15 +244,7 @@ def deepseek_answer(
             citation["citation_id"] = f"C{index}"
             citation["score"] = round(hit.score, 4)
             citations.append(citation)
-    usage = (
-        response.usage.model_dump()
-        if hasattr(response.usage, "model_dump")
-        else {
-            "prompt_tokens": getattr(response.usage, "prompt_tokens", None),
-            "completion_tokens": getattr(response.usage, "completion_tokens", None),
-            "total_tokens": getattr(response.usage, "total_tokens", None),
-        }
-    )
+    citations = filter_used_citations(answer, citations, refused=refused)
     return {
         "answer": answer or REFUSAL_TEXT,
         "citations": citations,
@@ -222,6 +252,87 @@ def deepseek_answer(
         "thinking": thinking,
         "max_tokens": max_tokens,
         "refused": refused,
-        "model": response.model,
+        "model": model,
         "usage": usage,
     }
+
+
+def deepseek_answer(
+    question: str,
+    hits: list[SearchHit],
+    *,
+    thinking: bool = True,
+    max_tokens: int = DEEPSEEK_MAX_TOKENS,
+) -> dict[str, Any]:
+    """Generate an answer through the DeepSeek OpenAI-compatible API."""
+    client = _deepseek_client()
+    try:
+        response = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            temperature=0,
+            max_tokens=max_tokens,
+            extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
+            messages=_deepseek_messages(question, hits),
+        )
+    except Exception as exc:
+        raise ModelGenerationError("The model request failed.") from exc
+    answer = (response.choices[0].message.content or "").strip()
+    return _deepseek_result(
+        answer,
+        hits,
+        thinking=thinking,
+        max_tokens=max_tokens,
+        model=response.model,
+        usage=_usage_payload(response.usage),
+    )
+
+
+def deepseek_answer_stream(
+    question: str,
+    hits: list[SearchHit],
+    *,
+    thinking: bool = True,
+    max_tokens: int = DEEPSEEK_MAX_TOKENS,
+) -> Iterator[dict[str, Any]]:
+    """Yield answer deltas, followed by the finalized non-stream result."""
+    client = _deepseek_client()
+    try:
+        response = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            temperature=0,
+            max_tokens=max_tokens,
+            stream=True,
+            stream_options={"include_usage": True},
+            extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
+            messages=_deepseek_messages(question, hits),
+        )
+    except Exception as exc:
+        raise ModelGenerationError("The model request failed.") from exc
+    parts: list[str] = []
+    model = DEEPSEEK_MODEL
+    usage: dict[str, Any] = {}
+    try:
+        for chunk in response:
+            model = getattr(chunk, "model", None) or model
+            chunk_usage = getattr(chunk, "usage", None)
+            if chunk_usage is not None:
+                usage = _usage_payload(chunk_usage)
+            choices = getattr(chunk, "choices", None) or []
+            if not choices:
+                continue
+            delta = getattr(choices[0].delta, "content", None) or ""
+            if delta:
+                parts.append(delta)
+                yield {"type": "token", "delta": delta}
+    except Exception as exc:
+        raise ModelGenerationError("The model stream failed.") from exc
+
+    result = _deepseek_result(
+        "".join(parts),
+        hits,
+        thinking=thinking,
+        max_tokens=max_tokens,
+        model=model,
+        usage=usage,
+    )
+    yield {"type": "result", "result": result}

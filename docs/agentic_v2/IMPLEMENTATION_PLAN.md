@@ -55,7 +55,7 @@ Acceptance:
 
 ## Phase 1: FastAPI and SSE
 
-Status: not started
+Status: complete
 
 Goal:
 
@@ -68,6 +68,7 @@ Deliverables:
 - `/health` endpoint
 - `/api/v1/answer` synchronous endpoint
 - `/api/v1/answer/stream` SSE endpoint
+- incremental DeepSeek token streaming through the existing RAG orchestration
 - consistent error handling for invalid input, missing data, and model errors
 - tests for normal answer, refusal, validation, and streaming
 - no LangGraph nodes yet
@@ -78,6 +79,14 @@ Acceptance:
 - API tests cover at least one successful answer and one refusal path
 - SSE events have stable event names and a documented payload shape
 - default B1 Fast behavior is unchanged
+
+Phase 1 verification (2026-11-10):
+
+- 43 tests passed with `python -m pytest -q`.
+- API and stream tests use deterministic stubs and do not call DeepSeek.
+- SSE emits `start`, `status`, `token`, `done`, and sanitized `error` events.
+- References in `done` are filtered to IDs present in the answer body.
+- The API contract is documented in `docs/agentic_v2/API.md`.
 
 ## Phase 2: LangGraph State Machine and Routing
 

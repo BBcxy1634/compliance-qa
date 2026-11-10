@@ -5,12 +5,17 @@ from __future__ import annotations
 import html
 import re
 import threading
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from src.config import DEEPSEEK_API_KEY, DEFAULT_CHUNKS_PATH
-from src.rag import answer_with_retriever, create_retriever
+from src.rag import (
+    answer_with_retriever,
+    create_retriever,
+    stream_answer_with_retriever,
+)
 
 
 @dataclass(frozen=True)
@@ -77,7 +82,11 @@ class DemoEngine:
     def warm_default(self) -> None:
         self.get_retriever("fast")
 
-    def ask(self, question: str, mode_key: str) -> dict[str, Any]:
+    def _prepare_request(
+        self,
+        question: str,
+        mode_key: str,
+    ) -> tuple[str, ModeConfig, Any]:
         question = (question or "").strip()
         if not question:
             raise ValueError("请输入问题。")
@@ -89,11 +98,30 @@ class DemoEngine:
         if config is None:
             raise ValueError(f"Unknown demo mode: {mode_key}")
         retriever = self.get_retriever(mode_key)
+        return question, config, retriever
+
+    def ask(self, question: str, mode_key: str) -> dict[str, Any]:
+        question, config, retriever = self._prepare_request(question, mode_key)
         return answer_with_retriever(
             question,
             retriever=retriever,
             backend=config.backend,
             mode="deepseek",
+            top_k=5,
+            thinking=config.thinking,
+            max_tokens=config.max_tokens,
+        )
+
+    def stream_ask(
+        self,
+        question: str,
+        mode_key: str,
+    ) -> Iterator[dict[str, Any]]:
+        question, config, retriever = self._prepare_request(question, mode_key)
+        return stream_answer_with_retriever(
+            question,
+            retriever=retriever,
+            backend=config.backend,
             top_k=5,
             thinking=config.thinking,
             max_tokens=config.max_tokens,

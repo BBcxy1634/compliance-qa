@@ -1,6 +1,6 @@
 # Agentic Compliance Copilot v2 Project State
 
-Last updated: 2026-11-08
+Last updated: 2026-11-10
 
 ## Repository Snapshot
 
@@ -10,8 +10,8 @@ Last updated: 2026-11-08
 | Current branch | `feat/agentic-v2` |
 | Base release | `v1.0.0` |
 | Base commit | `1ea2f4b9161b921d126466f86e69782bec9b34b1` |
-| Current V2 phase | Phase 0: context and implementation setup |
-| V2 code status | Not started |
+| Current V2 phase | Phase 1: FastAPI and SSE complete |
+| V2 code status | Phase 1 complete |
 | Current release state | v1.0.0 remains the released version |
 
 ## V2 Goal
@@ -84,6 +84,7 @@ Important existing modules:
 | `src/rag.py` | current CLI and answer orchestration |
 | `app.py` | Gradio demo |
 | `src/demo.py` | demo modes, HTML rendering, citation filtering |
+| `src/api.py` | FastAPI models, synchronous answer endpoint, and SSE streaming |
 | `evaluate.py`, `src/evaluate.py` | evaluation entry point and metrics |
 | `eval/questions.jsonl` | frozen 60-question evaluation set |
 | `bench.py`, `src/benchmark.py` | latency and cost benchmark |
@@ -108,9 +109,24 @@ Results:
 - `bge_m3_b0`: 334 vectors.
 - Git worktree was clean before V2 setup files were added.
 
+## Phase 1 Verification
+
+Validation performed on 2026-11-10:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Results:
+
+- 43 tests passed.
+- API tests use deterministic in-memory engines and do not call DeepSeek.
+- Streaming generation tests use a fake OpenAI-compatible client.
+- Synchronous and SSE paths reuse the existing retriever and generation
+  orchestration.
+
 ## Current Gaps
 
-- No streaming HTTP API.
 - No LangGraph state machine or explicit route selection.
 - No tool-calling layer or tool failure handling.
 - No short-term conversation state.
@@ -123,20 +139,21 @@ Results:
 
 ## Current Phase and Next Task
 
-Phase 0 is complete when these context files and `AGENTS.md` are committed.
+Phase 1 is complete. The FastAPI application exposes:
 
-The next task is **Phase 1: FastAPI + SSE streaming**.
+- `GET /health`
+- `POST /api/v1/answer`
+- `POST /api/v1/answer/stream`
 
-That task must:
+The SSE contract emits `start`, `status`, `token`, `done`, and `error` events.
+DeepSeek output is streamed as incremental token deltas. The `done` event
+contains only citations whose IDs occur in the complete answer body. Refusals
+always return `refused=true` and no citations.
 
-- preserve the existing CLI and Gradio behavior
-- add an API with request and response models
-- add an SSE streaming response
-- add tests for success, refusal, validation, and streaming
-- update this file after completion
-- commit the phase
+The next task is **Phase 2: LangGraph state machine and routing**. Do not add
+LangGraph nodes or tools until Phase 2 starts.
 
-Do not implement LangGraph nodes or tools in Phase 1.
+The API contract is documented in `docs/agentic_v2/API.md`.
 
 ## Environment and Data Rules
 
